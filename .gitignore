@@ -4,6 +4,8 @@ dist/
 build/
 uploads/documents/*
 !uploads/documents/.gitkeep
+server/uploads/documents/*
+!server/uploads/documents/.gitkeep
 .DS_Store
 Thumbs.db
 *.log

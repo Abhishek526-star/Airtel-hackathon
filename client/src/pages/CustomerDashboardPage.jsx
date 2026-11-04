@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import api from '../services/api';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import { 
-  Building2, 
   Wifi, 
-  Phone, 
   FileText, 
   ShieldCheck, 
   Download, 
-  Activity, 
-  PlusCircle, 
-  Clock, 
-  CreditCard,
-  CheckCircle2,
-  AlertCircle
 } from 'lucide-react';
 
 const CustomerDashboardPage = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
@@ -83,7 +77,7 @@ const CustomerDashboardPage = () => {
               icon={Download}
               className="text-xs flex-1 md:flex-none"
             >
-              {downloadSuccess ? 'Invoice Downloaded!' : 'Download GST Tax Invoice'}
+              {downloadSuccess ? t('dashboard.downloadedAlert', 'Invoice Downloaded!') : t('dashboard.downloadPdfBtn', 'Download Official PDF Invoice')}
             </Button>
           </div>
         </div>
@@ -91,27 +85,27 @@ const CustomerDashboardPage = () => {
         {/* Telemetry & SLA Metric Gauges */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">Broadband SLA</div>
+            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">{t('dashboard.broadbandSla', 'Broadband SLA')}</div>
             <div className="text-2xl font-extrabold text-emerald-600">99.8%</div>
-            <div className="text-[11px] text-slate-500">Enterprise Circuit Active</div>
+            <div className="text-[11px] text-slate-500">{t('dashboard.enterpriseActive', 'Enterprise Circuit Active')}</div>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">Monthly Recurring</div>
+            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">{t('dashboard.monthlyRecurring', 'Monthly Recurring')}</div>
             <div className="text-2xl font-extrabold text-slate-900">₹2,351</div>
-            <div className="text-[11px] text-slate-500">Includes 18% GST Credit</div>
+            <div className="text-[11px] text-slate-500">{t('dashboard.gstCredit', 'Includes 18% GST Credit')}</div>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">Static IPv4</div>
+            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">{t('dashboard.staticIpTitle', 'Static IPv4')}</div>
             <div className="text-xl font-bold font-mono text-slate-800">103.24.188.42</div>
-            <div className="text-[11px] text-slate-500">CCTV & Billing Server</div>
+            <div className="text-[11px] text-slate-500">{t('dashboard.cctvServer', 'CCTV & Billing Server')}</div>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">Active Services</div>
+            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">{t('dashboard.activeServicesCount', 'Active Services')}</div>
             <div className="text-2xl font-extrabold text-airtel-700">4 Lines</div>
-            <div className="text-[11px] text-slate-500">Broadband + SIM + WhatsApp</div>
+            <div className="text-[11px] text-slate-500">{t('dashboard.linesSummary', 'Broadband + SIM + WhatsApp')}</div>
           </div>
         </div>
 
@@ -124,11 +118,11 @@ const CustomerDashboardPage = () => {
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
                   <Wifi className="w-4 h-4 text-airtel-600" />
-                  <span>Active Telecom & Digital Services</span>
+                  <span>{t('dashboard.activeServicesTitle', 'Active Telecom & Digital Services')}</span>
                 </h3>
                 <span className="text-xs text-emerald-600 font-semibold flex items-center space-x-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>All Systems Operational</span>
+                  <span>{t('dashboard.allOperational', 'All Systems Operational')}</span>
                 </span>
               </div>
 
@@ -182,7 +176,7 @@ const CustomerDashboardPage = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
               <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3 flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-airtel-600" />
-                <span>Monthly GST B2B Statement</span>
+                <span>{t('dashboard.gstInvoiceTitle', 'Monthly GST B2B Statement')}</span>
               </h3>
 
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2 font-mono">
@@ -219,7 +213,7 @@ const CustomerDashboardPage = () => {
                 icon={Download}
                 className="w-full text-xs"
               >
-                {downloadSuccess ? 'Downloading PDF...' : 'Download Official PDF Invoice'}
+                {downloadSuccess ? t('dashboard.downloadedAlert', 'Invoice Downloaded!') : t('dashboard.downloadPdfBtn', 'Download Official PDF Invoice')}
               </Button>
             </div>
           </div>
@@ -232,4 +226,3 @@ const CustomerDashboardPage = () => {
 };
 
 export default CustomerDashboardPage;
-

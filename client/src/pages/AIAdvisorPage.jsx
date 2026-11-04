@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '../context/OnboardingContext';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import api from '../services/api';
 import Stepper from '../components/common/Stepper';
 import Button from '../components/common/Button';
@@ -11,21 +12,14 @@ import {
   RotateCcw, 
   ArrowRight, 
   CheckCircle2, 
-  Wifi, 
-  Phone, 
-  Cloud, 
-  ShieldCheck, 
-  HelpCircle,
-  Languages,
-  UserCheck
 } from 'lucide-react';
 
 const AIAdvisorPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { setBundleFromAdvisor, setCurrentStep } = useOnboarding();
+  const { t, language } = useTranslation();
 
-  const [language, setLanguage] = useState('en');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [answers, setAnswers] = useState({
     segment: 'Micro Retail and Services',
@@ -39,9 +33,9 @@ const AIAdvisorPage = () => {
   const [recommendation, setRecommendation] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Fetch initial question
+  // Fetch question whenever active language or step changes
   useEffect(() => {
-    fetchNextQuestion(0, answers);
+    fetchNextQuestion(currentStepIndex, answers);
   }, [language]);
 
   const fetchNextQuestion = async (step, currentAnswers) => {
@@ -90,6 +84,12 @@ const AIAdvisorPage = () => {
     }
   };
 
+  // Helper to get translated option label if available
+  const getOptionLabel = (qId, optionIdx, defaultLabel) => {
+    const key = `${qId === 'segment' ? 'q1' : qId === 'employees' ? 'q2' : qId === 'requiresPaymentPos' ? 'q3' : qId === 'requiresWhatsapp' ? 'q4' : 'q5'}_opt${optionIdx + 1}`;
+    return t(`advisor.${key}`, defaultLabel);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Stepper currentStep={1} />
@@ -103,25 +103,19 @@ const AIAdvisorPage = () => {
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">AI Business Telecom Advisor</h1>
-              <p className="text-xs text-slate-500">Intelligent bundling matching your operational footprint</p>
+              <h1 className="text-xl font-bold text-slate-900">{t('advisor.title', 'AI Business Telecom Advisor')}</h1>
+              <p className="text-xs text-slate-500">{t('advisor.subtitle', 'Intelligent bundling matching your operational footprint')}</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700"
-            >
-              <Languages className="w-3.5 h-3.5 text-airtel-600" />
-              <span>{language === 'en' ? 'हिंदी में बदलें' : 'Switch to English'}</span>
-            </button>
-            <button
               onClick={handleRestart}
-              className="p-1.5 rounded-lg border border-slate-300 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 text-xs font-medium"
               title="Restart Advisor"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>{t('advisor.adjustReq', 'Restart')}</span>
             </button>
           </div>
         </div>
@@ -140,8 +134,10 @@ const AIAdvisorPage = () => {
             <div className="space-y-6">
               
               <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-100 pb-3">
-                <span className="font-semibold uppercase tracking-wider text-airtel-700">Question {currentStepIndex + 1} of 5</span>
-                <span>{Math.round(((currentStepIndex + 1) / 5) * 100)}% Completed</span>
+                <span className="font-semibold uppercase tracking-wider text-airtel-700">
+                  {t('advisor.questionProgress', 'Question {current} of {total}', { current: currentStepIndex + 1, total: 5 })}
+                </span>
+                <span>{Math.round(((currentStepIndex + 1) / 5) * 100)}%</span>
               </div>
 
               {/* Assistant Message Bubble */}
@@ -163,7 +159,7 @@ const AIAdvisorPage = () => {
                     onClick={() => handleSelectOption(currentQuestion.id, option.value)}
                     className="w-full text-left p-3.5 rounded-xl border border-slate-200 bg-white hover:border-airtel-500 hover:bg-red-50/40 text-slate-800 text-xs sm:text-sm font-semibold transition-all flex items-center justify-between group active:scale-[0.99]"
                   >
-                    <span>{option.label}</span>
+                    <span>{getOptionLabel(currentQuestion.id, idx, option.label)}</span>
                     <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-airtel-600 transition-colors" />
                   </button>
                 ))}
@@ -172,7 +168,7 @@ const AIAdvisorPage = () => {
               {isEvaluating && (
                 <div className="pl-11 flex items-center space-x-2 text-xs text-slate-400 italic">
                   <div className="w-2 h-2 rounded-full bg-airtel-600 animate-ping"></div>
-                  <span>Accel AI Advisor analyzing catalogue dependencies & tier rules...</span>
+                  <span>{t('advisor.evaluatingText', 'Accel AI Advisor analyzing catalogue dependencies & tier rules...')}</span>
                 </div>
               )}
 
@@ -185,7 +181,7 @@ const AIAdvisorPage = () => {
               
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
-                  <Badge variant="brand" className="mb-1">Recommended Bundle</Badge>
+                  <Badge variant="brand" className="mb-1">{t('advisor.recBadge', 'Recommended Bundle')}</Badge>
                   <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                     {recommendation.bundleName}
                   </h2>
@@ -194,12 +190,12 @@ const AIAdvisorPage = () => {
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-slate-400">Estimated Monthly</span>
+                  <span className="text-xs text-slate-400">{t('advisor.estMonthly', 'Estimated Monthly')}</span>
                   <div className="text-2xl font-extrabold text-airtel-700">
                     ₹{recommendation.estimatedMonthlyPrice.toLocaleString('en-IN')}
                     <span className="text-xs font-normal text-slate-500">/mo</span>
                   </div>
-                  <span className="text-[10px] text-slate-400">+ 18% GST (Input Credit)</span>
+                  <span className="text-[10px] text-slate-400">{t('advisor.plusGst', '+ 18% GST (Input Credit)')}</span>
                 </div>
               </div>
 
@@ -207,7 +203,7 @@ const AIAdvisorPage = () => {
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-airtel-600" />
-                  <span>Why This Bundle Fits Your Operations</span>
+                  <span>{t('advisor.whyFits', 'Why This Bundle Fits Your Operations')}</span>
                 </h4>
                 <ul className="space-y-1.5 text-xs text-slate-600">
                   {recommendation.reasoning.map((reason, idx) => (
@@ -222,7 +218,7 @@ const AIAdvisorPage = () => {
               {/* Product Breakdown Grid */}
               <div className="space-y-2.5">
                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Included Services ({recommendation.recommendedProducts.length})
+                  {t('advisor.includedServices', 'Included Services')} ({recommendation.recommendedProducts.length})
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {recommendation.recommendedProducts.map((prod) => (
@@ -252,7 +248,7 @@ const AIAdvisorPage = () => {
                   icon={RotateCcw}
                   className="w-full sm:w-auto text-xs"
                 >
-                  Adjust Requirements
+                  {t('advisor.adjustReq', 'Adjust Requirements')}
                 </Button>
                 <Button
                   variant="primary"
@@ -261,7 +257,7 @@ const AIAdvisorPage = () => {
                   icon={ArrowRight}
                   className="w-full sm:w-auto text-sm px-6"
                 >
-                  Accept Bundle & Customize Quote
+                  {t('advisor.acceptBundle', 'Accept Bundle & Customize Quote')}
                 </Button>
               </div>
 
@@ -276,4 +272,3 @@ const AIAdvisorPage = () => {
 };
 
 export default AIAdvisorPage;
-

@@ -1,16 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../context/LanguageContext';
 import api from '../services/api';
 import Badge from '../components/common/Badge';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Users, 
-  Clock, 
-  IndianRupee, 
-  ShieldCheck, 
-  AlertCircle,
-  Layers
-} from 'lucide-react';
 import { 
   ResponsiveContainer, 
   BarChart, 
@@ -19,13 +10,10 @@ import {
   YAxis, 
   Tooltip, 
   CartesianGrid, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  Legend 
 } from 'recharts';
 
 const AdminAnalyticsPage = () => {
+  const { t } = useTranslation();
   const [overview, setOverview] = useState(null);
   const [funnel, setFunnel] = useState([]);
   const [cohort, setCohort] = useState(null);
@@ -54,8 +42,6 @@ const AdminAnalyticsPage = () => {
     }
   };
 
-  const COLORS = ['#E31E24', '#0284C7', '#16A34A', '#F59E0B', '#8B5CF6'];
-
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -65,55 +51,55 @@ const AdminAnalyticsPage = () => {
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                Executive Acquisition & Funnel Analytics
+                {t('admin.title', 'Executive Acquisition & Funnel Analytics')}
               </h1>
-              <Badge variant="brand">Case Study Cohort Analysis</Badge>
+              <Badge variant="brand">{t('admin.badge', 'Case Study Cohort Analysis')}</Badge>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Data source: <strong>5,000 SMB Leads Cohort</strong> &bull; Accel Business vs Project Udyam Digital Impact
+              {t('admin.dataSource', 'Data source: 5,000 SMB Leads Cohort • Accel Business vs Project Udyam Digital Impact')}
             </p>
           </div>
           <div className="text-xs text-slate-500">
-            Airtel SYNC Hackathon 2026 &bull; Enterprise Track A
+            {t('admin.trackTag', 'Airtel SYNC Hackathon 2026 • Enterprise Track A')}
           </div>
         </div>
 
         {/* 4 Metric Impact Cards: Legacy Baseline vs Digital Target */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Lead Conversion Rate</div>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.convRateTitle', 'Lead Conversion Rate')}</div>
             <div className="flex items-baseline space-x-2">
               <span className="text-2xl font-extrabold text-red-600">7.36%</span>
               <span className="text-xs font-bold text-emerald-600">&rarr; 22.4% Target</span>
             </div>
-            <p className="text-[10px] text-slate-500">368 activations from 5,000 baseline leads</p>
+            <p className="text-[10px] text-slate-500">{t('admin.convRateDesc', '368 activations from 5,000 baseline leads')}</p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Blended Acquisition Cost</div>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.cacTitle', 'Blended Acquisition Cost')}</div>
             <div className="flex items-baseline space-x-2">
               <span className="text-2xl font-extrabold text-slate-900">₹15,000</span>
               <span className="text-xs font-bold text-emerald-600">&rarr; ₹4,200</span>
             </div>
-            <p className="text-[10px] text-slate-500">72% CAC reduction via self-service KYC</p>
+            <p className="text-[10px] text-slate-500">{t('admin.cacDesc', '72% CAC reduction via self-service KYC')}</p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Avg Lead-to-Activation</div>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.activationTimeTitle', 'Avg Lead-to-Activation')}</div>
             <div className="flex items-baseline space-x-2">
               <span className="text-2xl font-extrabold text-amber-600">17.6 Days</span>
               <span className="text-xs font-bold text-emerald-600">&rarr; &lt; 2 Days</span>
             </div>
-            <p className="text-[10px] text-slate-500">Eliminates 3-5 day quote turnaround</p>
+            <p className="text-[10px] text-slate-500">{t('admin.activationTimeDesc', 'Eliminates 3-5 day quote turnaround')}</p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Customer Follow-Up Calls</div>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.followUpCallsTitle', 'Customer Follow-Up Calls')}</div>
             <div className="flex items-baseline space-x-2">
               <span className="text-2xl font-extrabold text-slate-900">3.2 Calls</span>
               <span className="text-xs font-bold text-emerald-600">&rarr; 0 Calls</span>
             </div>
-            <p className="text-[10px] text-slate-500">Replaced by live visual order tracker</p>
+            <p className="text-[10px] text-slate-500">{t('admin.followUpCallsDesc', 'Replaced by live visual order tracker')}</p>
           </div>
         </div>
 
@@ -124,8 +110,8 @@ const AdminAnalyticsPage = () => {
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-bold text-sm text-slate-900">6-Stage Acquisition Funnel</h3>
-                <p className="text-[11px] text-slate-500">Drop-off distribution across 5,000 leads</p>
+                <h3 className="font-bold text-sm text-slate-900">{t('admin.funnelTitle', '6-Stage Acquisition Funnel')}</h3>
+                <p className="text-[11px] text-slate-500">{t('admin.funnelSubtitle', 'Drop-off distribution across 5,000 leads')}</p>
               </div>
               <Badge variant="brand">Legacy Drop Points</Badge>
             </div>
@@ -150,8 +136,8 @@ const AdminAnalyticsPage = () => {
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="font-bold text-sm text-slate-900">The GSTIN Conversion Disparity</h3>
-                <p className="text-[11px] text-slate-500">Why GST-holding MSMEs convert 4.8x higher</p>
+                <h3 className="font-bold text-sm text-slate-900">{t('admin.gstinDisparityTitle', 'The GSTIN Conversion Disparity')}</h3>
+                <p className="text-[11px] text-slate-500">{t('admin.gstinDisparitySubtitle', 'Why GST-holding MSMEs convert 4.8x higher')}</p>
               </div>
               <Badge variant="neutral">9.6% vs 2.0%</Badge>
             </div>
@@ -178,7 +164,7 @@ const AdminAnalyticsPage = () => {
             </div>
 
             <div className="p-3.5 rounded-xl bg-red-50/60 border border-red-200 text-slate-700 text-xs leading-relaxed">
-              <strong>Udyam Digital Solution:</strong> Integrating the Udyam MSME Registry bridges this gap for micro-enterprises lacking GSTIN, raising non-GSTIN conversion from 2.0% to over 14%.
+              {t('admin.gstinSolutionNote', 'Udyam Digital Solution: Integrating the Udyam MSME Registry bridges this gap for micro-enterprises lacking GSTIN, raising non-GSTIN conversion from 2.0% to over 14%.')}
             </div>
           </div>
 
@@ -190,7 +176,7 @@ const AdminAnalyticsPage = () => {
           {/* Drop-off Root Causes */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3">
-              Primary Lead Drop-off Causes (Case Study Data)
+              {t('admin.dropCausesTitle', 'Primary Lead Drop-off Causes (Case Study Data)')}
             </h3>
 
             <div className="space-y-2.5">
@@ -209,7 +195,7 @@ const AdminAnalyticsPage = () => {
           {/* Customer Segment Distribution */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3">
-              Customer Segment Performance
+              {t('admin.segmentPerfTitle', 'Customer Segment Performance')}
             </h3>
 
             <div className="space-y-3">
@@ -238,4 +224,3 @@ const AdminAnalyticsPage = () => {
 };
 
 export default AdminAnalyticsPage;
-

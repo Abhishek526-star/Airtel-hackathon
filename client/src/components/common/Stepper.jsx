@@ -1,13 +1,16 @@
 import React from 'react';
 import { Check, Sparkles, FileText, ShieldCheck, ShoppingCart, Activity } from 'lucide-react';
+import { useTranslation } from '../../context/LanguageContext';
 
 const Stepper = ({ currentStep = 1, onStepClick }) => {
+  const { t } = useTranslation();
+
   const steps = [
-    { number: 1, label: 'AI Advisor', icon: Sparkles },
-    { number: 2, label: 'Quote Builder', icon: FileText },
-    { number: 3, label: 'Smart KYC', icon: ShieldCheck },
-    { number: 4, label: 'Checkout', icon: ShoppingCart },
-    { number: 5, label: 'Live Tracker', icon: Activity },
+    { number: 1, label: t('stepper.step1', 'AI Advisor'), icon: Sparkles },
+    { number: 2, label: t('stepper.step2', 'Quote Builder'), icon: FileText },
+    { number: 3, label: t('stepper.step3', 'Smart KYC'), icon: ShieldCheck },
+    { number: 4, label: t('stepper.step4', 'Checkout'), icon: ShoppingCart },
+    { number: 5, label: t('stepper.step5', 'Live Tracker'), icon: Activity },
   ];
 
   return (
@@ -65,4 +68,3 @@ const Stepper = ({ currentStep = 1, onStepClick }) => {
 };
 
 export default Stepper;
-

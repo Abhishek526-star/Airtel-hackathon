@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from '../context/LanguageContext';
 import api from '../services/api';
 import Stepper from '../components/common/Stepper';
 import Button from '../components/common/Button';
@@ -7,20 +8,18 @@ import Badge from '../components/common/Badge';
 import { 
   Activity, 
   CheckCircle2, 
-  Clock, 
   MapPin, 
   PhoneCall, 
   HardHat, 
   Wifi, 
   ArrowRight, 
-  ShieldCheck, 
-  Sparkles,
   Zap
 } from 'lucide-react';
 
 const OrderTrackerPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,11 +79,11 @@ const OrderTrackerPage = () => {
   const currentProgIndex = order ? getStepProgress(order.orderStatus) : 0;
 
   const timelineSteps = [
-    { title: 'Order Placed & Confirmed', desc: 'Accepted quote locked and service order created.' },
-    { title: 'Smart KYC Verified', desc: 'Mock GSTIN / Udyam credentials cross-checked successfully.' },
-    { title: 'Field Technician Assigned', desc: 'Engineer Ramesh Kumar dispatched for on-site CPE setup.' },
-    { title: 'Installation In Progress', desc: 'Optical fiber pulled to premises, router connected.' },
-    { title: 'Service Activated & Live', desc: 'Static IP routed, 99.8% SLA telemetry monitoring live.' },
+    { title: t('tracker.m1Title', 'Order Placed & Confirmed'), desc: t('tracker.m1Desc', 'Accepted quote locked and service order created.') },
+    { title: t('tracker.m2Title', 'Smart KYC Verified'), desc: t('tracker.m2Desc', 'Mock GSTIN / Udyam credentials cross-checked successfully.') },
+    { title: t('tracker.m3Title', 'Field Technician Assigned'), desc: t('tracker.m3Desc', 'Engineer Ramesh Kumar dispatched for on-site CPE setup.') },
+    { title: t('tracker.m4Title', 'Installation In Progress'), desc: t('tracker.m4Desc', 'Optical fiber pulled to premises, router connected.') },
+    { title: t('tracker.m5Title', 'Service Activated & Live'), desc: t('tracker.m5Desc', 'Static IP routed, 99.8% SLA telemetry monitoring live.') },
   ];
 
   return (
@@ -101,12 +100,12 @@ const OrderTrackerPage = () => {
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-bold text-slate-900">Live Order Lifecycle Tracker</h1>
+                <h1 className="text-xl font-bold text-slate-900">{t('tracker.title', 'Live Order Lifecycle Tracker')}</h1>
                 <Badge variant={order?.orderStatus === 'ACTIVATED' ? 'success' : 'brand'}>
                   {order?.orderStatus || 'ORDER_PLACED'}
                 </Badge>
               </div>
-              <p className="text-xs text-slate-500">Order ID: <strong className="font-mono text-slate-800">{id}</strong></p>
+              <p className="text-xs text-slate-500">{t('tracker.orderIdLabel', 'Order ID:')} <strong className="font-mono text-slate-800">{id}</strong></p>
             </div>
           </div>
 
@@ -119,7 +118,7 @@ const OrderTrackerPage = () => {
                 icon={ArrowRight}
                 className="text-xs"
               >
-                Go to Business Dashboard
+                {t('tracker.businessDashBtn', 'Go to Business Dashboard')}
               </Button>
             ) : (
               /* Reviewer Demo Shortcut Button */
@@ -131,7 +130,7 @@ const OrderTrackerPage = () => {
                 icon={Zap}
                 className="text-xs bg-slate-800 hover:bg-slate-700"
               >
-                {currentProgIndex < 3 ? 'Demo: Start Installation' : 'Demo: Complete & Activate'}
+                {currentProgIndex < 3 ? t('tracker.demoStartInstall', 'Demo: Start Installation') : t('tracker.demoActivate', 'Demo: Complete & Activate')}
               </Button>
             )}
           </div>
@@ -156,26 +155,26 @@ const OrderTrackerPage = () => {
                     <Wifi className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-lg">Your Enterprise Business Services Are Live!</h3>
-                    <p className="text-xs text-emerald-100">Zero physical follow-up calls needed. Provisioned in one sitting.</p>
+                    <h3 className="font-extrabold text-lg">{t('tracker.liveBannerTitle', 'Your Enterprise Business Services Are Live!')}</h3>
+                    <p className="text-xs text-emerald-100">{t('tracker.liveBannerDesc', 'Zero physical follow-up calls needed. Provisioned in one sitting.')}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
                   <div className="p-2.5 rounded-xl bg-black/20">
-                    <div className="text-[10px] text-emerald-200 uppercase font-bold">Circuit ID</div>
+                    <div className="text-[10px] text-emerald-200 uppercase font-bold">{t('tracker.circuitId', 'Circuit ID')}</div>
                     <div className="font-mono font-bold">{order.serviceActivation?.circuitId || 'ACCEL-NCR-9912'}</div>
                   </div>
                   <div className="p-2.5 rounded-xl bg-black/20">
-                    <div className="text-[10px] text-emerald-200 uppercase font-bold">Assigned Static IP</div>
+                    <div className="text-[10px] text-emerald-200 uppercase font-bold">{t('tracker.staticIp', 'Assigned Static IP')}</div>
                     <div className="font-mono font-bold">{order.serviceActivation?.assignedStaticIp || '103.24.188.42'}</div>
                   </div>
                   <div className="p-2.5 rounded-xl bg-black/20">
-                    <div className="text-[10px] text-emerald-200 uppercase font-bold">CPE Router S/N</div>
+                    <div className="text-[10px] text-emerald-200 uppercase font-bold">{t('tracker.cpeSerial', 'CPE Router S/N')}</div>
                     <div className="font-mono font-bold">{order.serviceActivation?.cpeSerialNumber || 'ONT-NOKIA-XS'}</div>
                   </div>
                   <div className="p-2.5 rounded-xl bg-black/20">
-                    <div className="text-[10px] text-emerald-200 uppercase font-bold">SLA Health</div>
+                    <div className="text-[10px] text-emerald-200 uppercase font-bold">{t('tracker.slaHealth', 'SLA Health')}</div>
                     <div className="font-bold text-emerald-300">99.8% Guaranteed</div>
                   </div>
                 </div>
@@ -185,7 +184,7 @@ const OrderTrackerPage = () => {
             {/* Visual Milestones Timeline Card */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
               <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3">
-                Provisioning Milestones
+                {t('tracker.milestonesTitle', 'Provisioning Milestones')}
               </h3>
 
               <div className="relative pl-6 space-y-8 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
@@ -226,7 +225,7 @@ const OrderTrackerPage = () => {
               <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
                 <div className="flex items-center space-x-2 text-slate-900 font-bold text-xs">
                   <HardHat className="w-4 h-4 text-amber-500" />
-                  <span>Assigned Field Technician</span>
+                  <span>{t('tracker.assignedTechTitle', 'Assigned Field Technician')}</span>
                 </div>
                 <div className="space-y-1 text-xs">
                   <div className="font-bold text-slate-800">{order.installationDetails?.assignedEngineer?.name}</div>
@@ -239,7 +238,7 @@ const OrderTrackerPage = () => {
                     className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     <PhoneCall className="w-3 h-3 text-emerald-600" />
-                    <span>Call Engineer</span>
+                    <span>{t('tracker.callTechBtn', 'Call Engineer')}</span>
                   </a>
                 </div>
               </div>
@@ -247,7 +246,7 @@ const OrderTrackerPage = () => {
               <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
                 <div className="flex items-center space-x-2 text-slate-900 font-bold text-xs">
                   <MapPin className="w-4 h-4 text-airtel-600" />
-                  <span>Installation Site</span>
+                  <span>{t('tracker.installationSiteTitle', 'Installation Site')}</span>
                 </div>
                 <div className="space-y-1 text-xs text-slate-600">
                   <div className="font-semibold text-slate-800">{order.installationDetails?.installationAddress}</div>
@@ -267,4 +266,3 @@ const OrderTrackerPage = () => {
 };
 
 export default OrderTrackerPage;
-

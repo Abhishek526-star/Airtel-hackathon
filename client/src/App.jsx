@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { OnboardingProvider } from './context/OnboardingContext';
 
@@ -98,11 +99,13 @@ const AppContent = () => {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <OnboardingProvider>
-          <AppContent />
-        </OnboardingProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <OnboardingProvider>
+            <AppContent />
+          </OnboardingProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </Router>
   );
 }

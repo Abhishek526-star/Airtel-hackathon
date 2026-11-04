@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import Button from '../components/common/Button';
-import { UserPlus, ArrowRight } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -44,8 +46,12 @@ const RegisterPage = () => {
         <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-airtel-700 to-airtel-500 text-white font-extrabold flex items-center justify-center mx-auto text-xl shadow-md shadow-red-500/20">
           A
         </div>
-        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Create Enterprise Business Profile</h2>
-        <p className="text-xs text-slate-500">Project Udyam Digital &bull; Start your one-sitting onboarding</p>
+        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+          {t('auth.registerTitle', 'Create Enterprise Business Profile')}
+        </h2>
+        <p className="text-xs text-slate-500">
+          {t('auth.subTitleRegister', 'Project Udyam Digital • Start your one-sitting onboarding')}
+        </p>
       </div>
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4">
@@ -59,7 +65,9 @@ const RegisterPage = () => {
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Full Legal Name</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {t('auth.fullNameLabel', 'Full Legal Name')}
+              </label>
               <input
                 type="text"
                 name="fullName"
@@ -72,7 +80,9 @@ const RegisterPage = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Trade or Business Name</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {t('auth.tradeNameLabel', 'Trade or Business Name')}
+              </label>
               <input
                 type="text"
                 name="businessName"
@@ -86,7 +96,9 @@ const RegisterPage = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Mobile Phone</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {t('auth.phoneLabel', 'Mobile Phone')}
+                </label>
                 <input
                   type="tel"
                   name="phone"
@@ -98,7 +110,9 @@ const RegisterPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {t('auth.emailLabel', 'Email Address')}
+                </label>
                 <input
                   type="email"
                   name="email"
@@ -113,7 +127,9 @@ const RegisterPage = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Business Segment</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {t('auth.segmentLabel', 'Business Segment')}
+                </label>
                 <select
                   name="segment"
                   value={formData.segment}
@@ -127,7 +143,9 @@ const RegisterPage = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">City Location Tier</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  {t('auth.tierLabel', 'City Location Tier')}
+                </label>
                 <select
                   name="cityTier"
                   value={formData.cityTier}
@@ -142,7 +160,9 @@ const RegisterPage = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {t('auth.passwordLabel', 'Password')}
+              </label>
               <input
                 type="password"
                 name="password"
@@ -162,14 +182,14 @@ const RegisterPage = () => {
               icon={UserPlus}
               className="w-full text-xs mt-2"
             >
-              Create Account & Start Advisor
+              {t('auth.createAccountBtn', 'Create Account & Start Advisor')}
             </Button>
           </form>
 
           <div className="text-center text-xs text-slate-500 pt-2 border-t border-slate-100">
-            Already registered?{' '}
+            {t('auth.alreadyRegistered', 'Already registered?')}{' '}
             <Link to="/login" className="font-bold text-airtel-700 hover:underline">
-              Sign In
+              {t('common.signIn', 'Sign In')}
             </Link>
           </div>
 
@@ -180,4 +200,3 @@ const RegisterPage = () => {
 };
 
 export default RegisterPage;
-

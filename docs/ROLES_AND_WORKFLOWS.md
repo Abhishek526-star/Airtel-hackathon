@@ -194,3 +194,4 @@ node server/tests/api.test.js
 - Customer journey: Health check, official catalogue retrieval (`P01`–`P25`), AI recommendation, quote calculation, and Smart KYC verification passed.
 - Partner journey: Lead retrieval, KYC status overrides, and WhatsApp recovery endpoints passed.
 - Admin journey: Executive cohort analytics calculation across all 5,000 official company leads passed.
+

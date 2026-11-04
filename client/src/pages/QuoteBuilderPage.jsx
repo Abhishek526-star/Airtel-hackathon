@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '../context/OnboardingContext';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import api from '../services/api';
 import Stepper from '../components/common/Stepper';
 import Button from '../components/common/Button';
@@ -11,17 +12,14 @@ import {
   Plus, 
   Minus, 
   Trash2, 
-  ShieldCheck, 
   Sparkles, 
-  Lock, 
   ArrowRight,
-  Info,
-  CheckCircle2
 } from 'lucide-react';
 
 const QuoteBuilderPage = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const {
     cartItems,
     addItemToCart,
@@ -29,7 +27,6 @@ const QuoteBuilderPage = () => {
     updateItemQuantity,
     contractDuration,
     setContractDuration,
-    activeQuote,
     setActiveQuote,
     setCurrentStep,
   } = useOnboarding();
@@ -79,7 +76,6 @@ const QuoteBuilderPage = () => {
       setErrorMsg('');
 
       if (!isAuthenticated) {
-        // If guest, auto-login with demo or redirect
         navigate('/login?redirect=/quote');
         return;
       }
@@ -115,11 +111,11 @@ const QuoteBuilderPage = () => {
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Interactive Quote Builder</h1>
-              <p className="text-xs text-slate-500">Customize services, select commitment term, and review 100% transparent pricing</p>
+              <h1 className="text-xl font-bold text-slate-900">{t('quote.title', 'Interactive Quote Builder')}</h1>
+              <p className="text-xs text-slate-500">{t('quote.subtitle', 'Customize services, select commitment term, and review 100% transparent pricing')}</p>
             </div>
           </div>
-          <Badge variant="brand">Server-Authoritative Pricing</Badge>
+          <Badge variant="brand">{t('quote.serverPricing', 'Server-Authoritative Pricing')}</Badge>
         </div>
 
         {errorMsg && (
@@ -137,14 +133,14 @@ const QuoteBuilderPage = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="font-bold text-sm text-slate-800">
-                  Configured Services ({cartItems.length})
+                  {t('quote.configuredServices', 'Configured Services')} ({cartItems.length})
                 </h3>
-                <span className="text-xs text-slate-400">Official Accel Business Catalogue</span>
+                <span className="text-xs text-slate-400">{t('quote.catalogueNotice', 'Official Accel Business Catalogue')}</span>
               </div>
 
               {cartItems.length === 0 ? (
                 <div className="py-8 text-center text-slate-400 text-xs">
-                  Your cart is empty. Please add at least one business service below.
+                  {t('quote.emptyCart', 'Your cart is empty. Please add at least one business service below.')}
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100">
@@ -194,15 +190,15 @@ const QuoteBuilderPage = () => {
             {/* Contract Duration Selector */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm text-slate-800">Contract Lock-in Period</h3>
-                <span className="text-xs text-slate-400">Term Commitment Discount</span>
+                <h3 className="font-bold text-sm text-slate-800">{t('quote.contractTerm', 'Contract Lock-in Period')}</h3>
+                <span className="text-xs text-slate-400">{t('quote.termDiscount', 'Term Commitment Discount')}</span>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { months: 12, discount: '0%', label: 'Standard (12 Mo)' },
-                  { months: 24, discount: '5% OFF MRC', label: 'Recommended (24 Mo)' },
-                  { months: 36, discount: '10% OFF MRC', label: 'Maximum Saver (36 Mo)' },
+                  { months: 12, discount: t('quote.disc0', '0% Discount'), label: t('quote.term12', 'Standard (12 Mo)') },
+                  { months: 24, discount: t('quote.disc5', '5% OFF MRC'), label: t('quote.term24', 'Recommended (24 Mo)') },
+                  { months: 36, discount: t('quote.disc10', '10% OFF MRC'), label: t('quote.term36', 'Maximum Saver (36 Mo)') },
                 ].map((term) => (
                   <button
                     key={term.months}
@@ -228,7 +224,7 @@ const QuoteBuilderPage = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
               <h3 className="font-bold text-sm text-slate-800 flex items-center space-x-1.5">
                 <Sparkles className="w-4 h-4 text-airtel-600" />
-                <span>Recommended Business Add-ons</span>
+                <span>{t('quote.recommendedAddons', 'Recommended Business Add-ons')}</span>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -268,55 +264,55 @@ const QuoteBuilderPage = () => {
             
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4 sticky top-24">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-bold text-sm text-slate-900">Price Breakdown</h3>
-                <Badge variant="brand">100% Itemized</Badge>
+                <h3 className="font-bold text-sm text-slate-900">{t('quote.priceBreakdown', 'Price Breakdown')}</h3>
+                <Badge variant="brand">{t('quote.itemizedBadge', '100% Itemized')}</Badge>
               </div>
 
               {pricing ? (
                 <div className="space-y-3 text-xs">
                   
                   <div className="flex justify-between text-slate-600">
-                    <span>Base Monthly Charges (MRC):</span>
+                    <span>{t('quote.baseMrc', 'Base Monthly Charges (MRC):')}</span>
                     <span className="font-semibold text-slate-800">₹{pricing.baseMrc.toLocaleString('en-IN')}</span>
                   </div>
 
                   {pricing.contractDiscountPercent > 0 && (
                     <div className="flex justify-between text-emerald-600 font-medium">
-                      <span>Term Discount ({pricing.contractDiscountPercent}% on {pricing.contractDurationMonths} mo):</span>
+                      <span>{t('quote.termDiscApplied', 'Term Discount ({percent}% on {months} mo):', { percent: pricing.contractDiscountPercent, months: pricing.contractDurationMonths })}</span>
                       <span>-₹{pricing.discountAmount.toLocaleString('en-IN')}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between text-slate-600">
-                    <span>Net Monthly Charges:</span>
+                    <span>{t('quote.netMrc', 'Net Monthly Charges:')}</span>
                     <span className="font-semibold text-slate-800">₹{pricing.discountedMrc.toLocaleString('en-IN')}</span>
                   </div>
 
                   <div className="flex justify-between text-slate-600">
-                    <span>GST (18% Input Tax Credit):</span>
+                    <span>{t('quote.gstMrc', 'GST (18% Input Tax Credit):')}</span>
                     <span className="font-semibold text-slate-800">₹{pricing.gstMrc.toLocaleString('en-IN')}</span>
                   </div>
 
                   <div className="pt-2 border-t border-slate-200 flex justify-between items-baseline">
-                    <span className="font-bold text-slate-900 text-sm">Total Monthly Bill:</span>
+                    <span className="font-bold text-slate-900 text-sm">{t('quote.totalMonthlyBill', 'Total Monthly Bill:')}</span>
                     <span className="font-extrabold text-airtel-700 text-lg">
                       ₹{pricing.totalMonthlyAmount.toLocaleString('en-IN')}
-                      <span className="text-[10px] text-slate-500 font-normal">/mo</span>
+                      <span className="text-[10px] text-slate-500 font-normal">{t('quote.perMonth', '/mo')}</span>
                     </span>
                   </div>
 
                   {/* One-Time Payable Details */}
                   <div className="pt-3 border-t border-dashed border-slate-200 space-y-1.5 text-[11px] text-slate-500">
                     <div className="flex justify-between">
-                      <span>Setup & Installation Fee:</span>
+                      <span>{t('quote.setupFees', 'Setup & Installation Fee:')}</span>
                       <span>₹{pricing.totalSetupFee.toLocaleString('en-IN')}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Setup GST (18%):</span>
+                      <span>{t('quote.setupGst', 'Setup GST (18%):')}</span>
                       <span>₹{pricing.gstSetup.toLocaleString('en-IN')}</span>
                     </div>
                     <div className="flex justify-between font-bold text-slate-800 text-xs pt-1">
-                      <span>Total One-Time Payable:</span>
+                      <span>{t('quote.totalOneTime', 'Total One-Time Payable:')}</span>
                       <span>₹{pricing.totalOneTimePayable.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
@@ -324,7 +320,7 @@ const QuoteBuilderPage = () => {
                 </div>
               ) : (
                 <div className="py-6 text-center text-slate-400 text-xs animate-pulse">
-                  Calculating real-time rates...
+                  {isCalculating ? 'Calculating rates...' : 'Waiting for items...'}
                 </div>
               )}
 
@@ -339,10 +335,10 @@ const QuoteBuilderPage = () => {
                   icon={ArrowRight}
                   className="w-full text-sm"
                 >
-                  Lock Quote & Proceed to Smart KYC
+                  {t('quote.lockQuoteBtn', 'Lock Quote & Proceed to Smart KYC')}
                 </Button>
                 <p className="text-[10px] text-slate-400 text-center mt-2">
-                  Quote is valid for 14 days &bull; No upfront card payment required
+                  {t('quote.validityNote', 'Quote is valid for 14 days • No upfront card payment required')}
                 </p>
               </div>
 
@@ -358,4 +354,3 @@ const QuoteBuilderPage = () => {
 };
 
 export default QuoteBuilderPage;
-

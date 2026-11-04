@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '../context/OnboardingContext';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import api from '../services/api';
 import Stepper from '../components/common/Stepper';
 import Button from '../components/common/Button';
@@ -9,7 +10,6 @@ import Badge from '../components/common/Badge';
 import { 
   ShieldCheck, 
   UploadCloud, 
-  FileCheck, 
   AlertTriangle, 
   CheckCircle2, 
   XCircle, 
@@ -22,7 +22,8 @@ import {
 const SmartKYCPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { activeQuote, kycData, setKycData, setCurrentStep } = useOnboarding();
+  const { setKycData, setCurrentStep } = useOnboarding();
+  const { t } = useTranslation();
 
   const [consentChecked, setConsentChecked] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -63,8 +64,7 @@ const SmartKYCPage = () => {
       if (selectedFile) {
         formData.append('document', selectedFile);
       } else {
-        // Create a synthetic blob for the test upload
-        const demoContent = `TAX INVOICE / CERTIFICATE: ${activeIdToVerify || '07AAAAA0000A1Z5'}`;
+        const demoContent = `TAX INVOICE / CERTIFICATE: ${activeIdToVerify || '32TTNXB7384T1ZW'}`;
         const blob = new Blob([demoContent], { type: 'text/plain' });
         formData.append('document', blob, `${activeTypeToVerify.toLowerCase()}_sample.pdf`);
       }
@@ -113,11 +113,11 @@ const SmartKYCPage = () => {
               <ShieldCheck className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Smart KYC & Verification</h1>
-              <p className="text-xs text-slate-500">DPDP Act 2023 compliant &bull; Instant Mock Registry validation</p>
+              <h1 className="text-xl font-bold text-slate-900">{t('kyc.title', 'Smart KYC & Verification')}</h1>
+              <p className="text-xs text-slate-500">{t('kyc.subtitle', 'DPDP Act 2023 compliant • Instant Mock Registry validation')}</p>
             </div>
           </div>
-          <Badge variant="brand">Automated OCR + Registry</Badge>
+          <Badge variant="brand">{t('kyc.automatedBadge', 'Automated OCR + Registry')}</Badge>
         </div>
 
         {errorMsg && (
@@ -126,37 +126,37 @@ const SmartKYCPage = () => {
           </div>
         )}
 
-        {/* Step A: DPDP Act 2023 Digital Consent Modal / Card */}
+        {/* Step A: DPDP Act 2023 Digital Consent Card */}
         {!consentChecked ? (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">
             <div className="flex items-center space-x-3 text-slate-900">
               <Lock className="w-6 h-6 text-airtel-600 flex-shrink-0" />
               <div>
-                <h3 className="font-bold text-base">DPDP Act 2023 Digital Subscriber Consent</h3>
-                <p className="text-xs text-slate-500">Digital Personal Data Protection Act compliance</p>
+                <h3 className="font-bold text-base">{t('kyc.consentTitle', 'DPDP Act 2023 Digital Subscriber Consent')}</h3>
+                <p className="text-xs text-slate-500">{t('kyc.consentSubtitle', 'Digital Personal Data Protection Act compliance')}</p>
               </div>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2 leading-relaxed">
               <p>
-                By proceeding, you grant explicit consent to <strong>Accel Telecom</strong> to verify your business identity credentials against official regulatory registries (GSTIN / Udyam) strictly for the following purposes:
+                {t('kyc.consentP1', 'By proceeding, you grant explicit consent to Accel Telecom to verify your business identity credentials against official regulatory registries (GSTIN / Udyam) strictly for the following purposes:')}
               </p>
               <ul className="list-disc pl-5 space-y-1 text-slate-700 font-medium">
-                <li>Automated telecom subscriber KYC validation & B2B GST billing setup</li>
-                <li>Fraud prevention & verification of authorized enterprise signatories</li>
-                <li>Zero retention of non-essential personal identifiers</li>
+                <li>{t('kyc.consentB1', 'Automated telecom subscriber KYC validation & B2B GST billing setup')}</li>
+                <li>{t('kyc.consentB2', 'Fraud prevention & verification of authorized enterprise signatories')}</li>
+                <li>{t('kyc.consentB3', 'Zero retention of non-essential personal identifiers')}</li>
               </ul>
             </div>
 
             <div className="pt-2 flex items-center justify-between">
-              <span className="text-xs text-slate-400">Recorded with cryptographic timestamp</span>
+              <span className="text-xs text-slate-400">{t('kyc.consentTimestampNote', 'Recorded with cryptographic timestamp')}</span>
               <Button
                 variant="primary"
                 size="md"
                 onClick={handleConsentSubmit}
                 icon={CheckCircle2}
               >
-                I Agree & Proceed to Upload
+                {t('kyc.agreeBtn', 'I Agree & Proceed to Upload')}
               </Button>
             </div>
           </div>
@@ -167,10 +167,10 @@ const SmartKYCPage = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
               
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-bold text-sm text-slate-900">Upload Business Proof</h3>
+                <h3 className="font-bold text-sm text-slate-900">{t('kyc.uploadTitle', 'Upload Business Proof')}</h3>
                 <span className="text-xs text-emerald-600 font-medium flex items-center space-x-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>DPDP Consent Active</span>
+                  <span>{t('kyc.consentActive', 'DPDP Consent Active')}</span>
                 </span>
               </div>
 
@@ -184,7 +184,7 @@ const SmartKYCPage = () => {
                       : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
                   }`}
                 >
-                  GST Certificate (15-Digit)
+                  {t('kyc.gstTab', 'GST Certificate (15-Digit)')}
                 </button>
                 <button
                   onClick={() => setDocumentType('UDYAM_CERTIFICATE')}
@@ -194,7 +194,7 @@ const SmartKYCPage = () => {
                       : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
                   }`}
                 >
-                  Udyam MSME Registration
+                  {t('kyc.udyamTab', 'Udyam MSME Registration')}
                 </button>
               </div>
 
@@ -202,7 +202,7 @@ const SmartKYCPage = () => {
               <div className="border-2 border-dashed border-slate-300 hover:border-airtel-500 rounded-2xl p-6 text-center space-y-2 bg-slate-50 transition-colors cursor-pointer">
                 <UploadCloud className="w-8 h-8 text-slate-400 mx-auto" />
                 <div className="text-xs font-bold text-slate-800">
-                  {selectedFile ? selectedFile.name : 'Drag & drop your document or click to browse'}
+                  {selectedFile ? selectedFile.name : t('kyc.dragDrop', 'Drag & drop your document or click to browse')}
                 </div>
                 <p className="text-[11px] text-slate-500">Supports PDF, PNG, JPG up to 5MB</p>
                 <input
@@ -216,7 +216,7 @@ const SmartKYCPage = () => {
                   htmlFor="doc-upload-input"
                   className="inline-block mt-2 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-xs font-semibold text-slate-700 cursor-pointer"
                 >
-                  Choose File
+                  {t('kyc.chooseFile', 'Choose File')}
                 </label>
               </div>
 
@@ -224,7 +224,7 @@ const SmartKYCPage = () => {
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                 <div className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-airtel-600" />
-                  <span>One-Click Test Records (Mock Registry)</span>
+                  <span>{t('kyc.testRecordsTitle', 'One-Click Test Records (Mock Registry)')}</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {demoSamples.map((sample, idx) => (
@@ -245,7 +245,7 @@ const SmartKYCPage = () => {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <input
                   type="text"
-                  placeholder={documentType === 'GST_CERTIFICATE' ? 'Enter 15-character GSTIN (e.g. 07AAAAA0000A1Z5)' : 'Enter Udyam Number (e.g. UDYAM-UP-28-0012345)'}
+                  placeholder={documentType === 'GST_CERTIFICATE' ? t('kyc.manualInputGst', 'Enter 15-character GSTIN (e.g. 32TTNXB7384T1ZW)') : t('kyc.manualInputUdyam', 'Enter Udyam Number (e.g. UDYAM-KL-00-3078801)')}
                   value={manualId}
                   onChange={(e) => setManualId(e.target.value.toUpperCase())}
                   className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500 uppercase tracking-wider font-mono"
@@ -257,7 +257,7 @@ const SmartKYCPage = () => {
                   onClick={() => handleUploadAndVerify()}
                   className="w-full sm:w-auto text-xs px-6"
                 >
-                  Scan & Verify Instantly
+                  {t('kyc.scanVerifyBtn', 'Scan & Verify Instantly')}
                 </Button>
               </div>
 
@@ -284,13 +284,13 @@ const SmartKYCPage = () => {
                     <div>
                       <h4 className="font-bold text-sm text-slate-900">
                         {uploadResult.verificationStatus === 'VERIFIED'
-                          ? 'Smart KYC Verification Succeeded'
+                          ? t('kyc.verifiedTitle', 'Smart KYC Verification Succeeded')
                           : uploadResult.verificationStatus === 'REJECTED'
-                          ? 'Verification Failed (Registry Invalidation)'
-                          : 'Flagged for Sales Partner Assisted Review'}
+                          ? t('kyc.rejectedTitle', 'Verification Failed (Registry Invalidation)')
+                          : t('kyc.reviewTitle', 'Flagged for Sales Partner Assisted Review')}
                       </h4>
                       <p className="text-xs text-slate-600 mt-0.5">
-                        Matched Identifier: <strong className="font-mono">{uploadResult.extractedId}</strong>
+                        {t('kyc.matchedId', 'Matched Identifier:')} <strong className="font-mono">{uploadResult.extractedId}</strong>
                       </p>
                     </div>
                   </div>
@@ -332,7 +332,7 @@ const SmartKYCPage = () => {
                       onClick={handleProceedToCheckout}
                       icon={ArrowRight}
                     >
-                      Proceed to Installation & Checkout
+                      {t('kyc.proceedCheckout', 'Proceed to Installation & Checkout')}
                     </Button>
                   ) : (
                     <Button
@@ -341,7 +341,7 @@ const SmartKYCPage = () => {
                       onClick={() => setUploadResult(null)}
                       icon={RefreshCw}
                     >
-                      Try Another Document
+                      {t('kyc.tryAnother', 'Try Another Document')}
                     </Button>
                   )}
                 </div>
@@ -358,4 +358,3 @@ const SmartKYCPage = () => {
 };
 
 export default SmartKYCPage;
-

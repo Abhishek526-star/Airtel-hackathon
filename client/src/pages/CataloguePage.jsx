@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '../context/OnboardingContext';
+import { useTranslation } from '../context/LanguageContext';
 import api from '../services/api';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
 import { 
   ShoppingBag, 
   Search, 
-  Filter, 
-  Wifi, 
-  Phone, 
-  Cloud, 
-  ShieldCheck, 
-  Cpu, 
   Plus, 
   Check, 
   ArrowRight 
@@ -21,6 +16,7 @@ import {
 const CataloguePage = () => {
   const navigate = useNavigate();
   const { addItemToCart, cartItems } = useOnboarding();
+  const { t } = useTranslation();
 
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -76,12 +72,12 @@ const CataloguePage = () => {
                 <ShoppingBag className="w-4 h-4" />
               </div>
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                Enterprise Product Catalogue
+                {t('catalogue.title', 'Enterprise Product Catalogue')}
               </h1>
-              <Badge variant="brand">25 Master Products</Badge>
+              <Badge variant="brand">{t('catalogue.badge', '25 Master Products')}</Badge>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Official Accel Business telecom, voice, cybersecurity, and cloud services for Indian MSMEs
+              {t('catalogue.subtitle', 'Official Accel Business telecom, voice, cybersecurity, and cloud services for Indian MSMEs')}
             </p>
           </div>
 
@@ -92,7 +88,7 @@ const CataloguePage = () => {
             icon={ArrowRight}
             className="text-xs"
           >
-            Go to Quote Builder ({cartItems.length} items)
+            {t('catalogue.goToQuoteBtn', 'Go to Quote Builder')} ({cartItems.length})
           </Button>
         </div>
 
@@ -105,7 +101,7 @@ const CataloguePage = () => {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
-                placeholder="Search products or bandwidth..."
+                placeholder={t('catalogue.searchPlaceholder', 'Search products or bandwidth...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchProducts()}
@@ -120,10 +116,10 @@ const CataloguePage = () => {
                 onChange={(e) => setCityTier(e.target.value)}
                 className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-700 font-semibold"
               >
-                <option value="">All City Tiers</option>
-                <option value="Tier 1">Tier 1 (Metro)</option>
-                <option value="Tier 2">Tier 2</option>
-                <option value="Tier 3">Tier 3</option>
+                <option value="">{t('catalogue.allCityTiers', 'All City Tiers')}</option>
+                <option value="Tier 1">{t('catalogue.tier1', 'Tier 1 (Metro)')}</option>
+                <option value="Tier 2">{t('catalogue.tier2', 'Tier 2')}</option>
+                <option value="Tier 3">{t('catalogue.tier3', 'Tier 3')}</option>
               </select>
 
               <label className="flex items-center space-x-1.5 cursor-pointer text-slate-700 font-semibold">
@@ -133,7 +129,7 @@ const CataloguePage = () => {
                   onChange={(e) => setGstinOnly(e.target.checked)}
                   className="rounded text-red-600 focus:ring-red-500"
                 />
-                <span>GSTIN Mandate Only</span>
+                <span>{t('catalogue.gstinMandateOnly', 'GSTIN Mandate Only')}</span>
               </label>
             </div>
 
@@ -149,7 +145,7 @@ const CataloguePage = () => {
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
-              All Categories (25)
+              {t('catalogue.allCategories', 'All Categories (25)')}
             </button>
             {categories.map((cat) => (
               <button
@@ -200,7 +196,7 @@ const CataloguePage = () => {
 
                     {prod.gstinRequired && (
                       <div className="text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded-md inline-block">
-                        GSTIN Registration Required
+                        {t('catalogue.gstinRequiredBadge', 'GSTIN Registration Required')}
                       </div>
                     )}
                   </div>
@@ -229,17 +225,17 @@ const CataloguePage = () => {
                       {isAdded ? (
                         <>
                           <Check className="w-3.5 h-3.5" />
-                          <span>Added!</span>
+                          <span>{t('catalogue.addedToast', 'Added!')}</span>
                         </>
                       ) : isInCart ? (
                         <>
                           <Plus className="w-3.5 h-3.5" />
-                          <span>Add More</span>
+                          <span>{t('catalogue.addMore', 'Add More')}</span>
                         </>
                       ) : (
                         <>
                           <Plus className="w-3.5 h-3.5" />
-                          <span>Add to Quote</span>
+                          <span>{t('catalogue.addToQuote', 'Add to Quote')}</span>
                         </>
                       )}
                     </button>
@@ -256,4 +252,3 @@ const CataloguePage = () => {
 };
 
 export default CataloguePage;
-

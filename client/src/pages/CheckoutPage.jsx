@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '../context/OnboardingContext';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from '../context/LanguageContext';
 import api from '../services/api';
 import Stepper from '../components/common/Stepper';
 import Button from '../components/common/Button';
@@ -10,12 +11,8 @@ import {
   ShoppingCart, 
   MapPin, 
   Calendar, 
-  Clock, 
   User, 
-  CreditCard, 
   CheckCircle2, 
-  ShieldCheck,
-  Building2,
   HardHat
 } from 'lucide-react';
 
@@ -23,6 +20,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { activeQuote, setActiveOrder, setCurrentStep } = useOnboarding();
+  const { t } = useTranslation();
 
   const [address, setAddress] = useState(user?.businessProfile?.address?.street || 'Shop 14, Main Market, Sector 18');
   const [city, setCity] = useState(user?.businessProfile?.address?.city || 'Noida');
@@ -74,11 +72,11 @@ const CheckoutPage = () => {
               <ShoppingCart className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Service Checkout & Installation Scheduling</h1>
-              <p className="text-xs text-slate-500">Confirm site location, field technician appointment, and complete simulated order</p>
+              <h1 className="text-xl font-bold text-slate-900">{t('checkout.title', 'Service Checkout & Installation Scheduling')}</h1>
+              <p className="text-xs text-slate-500">{t('checkout.subtitle', 'Confirm site location, field technician appointment, and complete simulated order')}</p>
             </div>
           </div>
-          <Badge variant="brand">Simulated B2B Checkout</Badge>
+          <Badge variant="brand">{t('checkout.simBadge', 'Simulated B2B Checkout')}</Badge>
         </div>
 
         {errorMsg && (
@@ -96,12 +94,12 @@ const CheckoutPage = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
               <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
                 <MapPin className="w-4 h-4 text-airtel-600" />
-                <span>Installation Site Address</span>
+                <span>{t('checkout.siteAddressTitle', 'Installation Site Address')}</span>
               </h3>
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Building / Shop / Street Address</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('checkout.streetLabel', 'Building / Shop / Street Address')}</label>
                   <input
                     type="text"
                     value={address}
@@ -112,7 +110,7 @@ const CheckoutPage = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">City / Region</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">{t('checkout.cityLabel', 'City / Region')}</label>
                     <input
                       type="text"
                       value={city}
@@ -121,7 +119,7 @@ const CheckoutPage = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">PIN Code</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">{t('checkout.pincodeLabel', 'PIN Code')}</label>
                     <input
                       type="text"
                       value={pincode}
@@ -137,13 +135,13 @@ const CheckoutPage = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
               <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
                 <Calendar className="w-4 h-4 text-airtel-600" />
-                <span>Preferred Installation Window</span>
+                <span>{t('checkout.prefWindow', 'Preferred Installation Window')}</span>
               </h3>
 
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { slot: '10:00 AM - 01:00 PM', label: 'Morning Slot' },
-                  { slot: '02:00 PM - 05:00 PM', label: 'Afternoon Slot' },
+                  { slot: '10:00 AM - 01:00 PM', label: t('checkout.slotMorning', 'Morning Slot (10:00 AM - 01:00 PM)') },
+                  { slot: '02:00 PM - 05:00 PM', label: t('checkout.slotAfternoon', 'Afternoon Slot (02:00 PM - 05:00 PM)') },
                 ].map((s) => (
                   <button
                     key={s.slot}
@@ -155,8 +153,7 @@ const CheckoutPage = () => {
                         : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
                     }`}
                   >
-                    <div className="text-xs font-bold">Tomorrow &bull; {s.label}</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">{s.slot}</div>
+                    <div className="text-xs font-bold">{s.label}</div>
                   </button>
                 ))}
               </div>
@@ -168,11 +165,11 @@ const CheckoutPage = () => {
                     <HardHat className="w-5 h-5 text-amber-400" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-900">Ramesh Kumar (Enterprise Field Tech)</div>
-                    <div className="text-[11px] text-slate-500">Badge: ENG-DELHI-408 &bull; Fiber & CPE Specialist</div>
+                    <div className="text-xs font-bold text-slate-900">{t('checkout.fieldTechName', 'Ramesh Kumar (Enterprise Field Tech)')}</div>
+                    <div className="text-[11px] text-slate-500">{t('checkout.fieldTechDesc', 'Badge: ENG-DELHI-408 • Fiber & CPE Specialist')}</div>
                   </div>
                 </div>
-                <Badge variant="success">Auto-Assigned</Badge>
+                <Badge variant="success">{t('checkout.autoAssigned', 'Auto-Assigned')}</Badge>
               </div>
             </div>
 
@@ -180,12 +177,12 @@ const CheckoutPage = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
               <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
                 <User className="w-4 h-4 text-airtel-600" />
-                <span>On-Site Technical Contact</span>
+                <span>{t('checkout.contactTitle', 'On-Site Technical Contact')}</span>
               </h3>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Contact Person Name</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('checkout.contactNameLabel', 'Contact Person Name')}</label>
                   <input
                     type="text"
                     value={contactName}
@@ -194,7 +191,7 @@ const CheckoutPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Mobile Phone</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t('checkout.contactPhoneLabel', 'Mobile Phone')}</label>
                   <input
                     type="text"
                     value={contactPhone}
@@ -212,37 +209,37 @@ const CheckoutPage = () => {
             
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4 sticky top-24">
               <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3">
-                Order Summary
+                {t('checkout.orderSummary', 'Order Summary')}
               </h3>
 
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between text-slate-600">
-                  <span>Selected Bundle:</span>
+                  <span>{t('checkout.selectedBundle', 'Selected Bundle:')}</span>
                   <span className="font-semibold text-slate-800">
                     {activeQuote?.bundleName || 'Customized MSME Bundle'}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>Contract Lock-in:</span>
+                  <span>{t('checkout.contractLockin', 'Contract Lock-in:')}</span>
                   <span className="font-semibold text-slate-800">
                     {activeQuote?.contractDurationMonths || 12} Months
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>Recurring Monthly Bill:</span>
+                  <span>{t('checkout.recurringBill', 'Recurring Monthly Bill:')}</span>
                   <span className="font-bold text-airtel-700">
                     ₹{(activeQuote?.totalMonthlyAmount || 2351).toLocaleString('en-IN')}/mo
                   </span>
                 </div>
                 <div className="pt-2 border-t border-slate-200 flex justify-between font-extrabold text-slate-900 text-sm">
-                  <span>Due Today (Simulated):</span>
+                  <span>{t('checkout.dueToday', 'Due Today (Simulated):')}</span>
                   <span>₹{(activeQuote?.totalOneTimePayable || 2941).toLocaleString('en-IN')}</span>
                 </div>
               </div>
 
               {/* Simulated Notice */}
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
-                <strong>Simulated Payment Notice:</strong> This is a demonstration prototype for Airtel SYNC 2026. No actual debit/credit card or real funds will be charged.
+                <strong>{t('checkout.simNoticeTitle', 'Simulated Payment Notice:')}</strong> {t('checkout.simNoticeDesc', 'This is a demonstration prototype for Airtel SYNC 2026. No actual debit/credit card or real funds will be charged.')}
               </div>
 
               <div className="pt-2">
@@ -254,7 +251,7 @@ const CheckoutPage = () => {
                   icon={CheckCircle2}
                   className="w-full text-sm"
                 >
-                  Confirm Order & Schedule
+                  {t('checkout.confirmOrderBtn', 'Confirm Order & Schedule')}
                 </Button>
               </div>
 
@@ -270,4 +267,3 @@ const CheckoutPage = () => {
 };
 
 export default CheckoutPage;
-
