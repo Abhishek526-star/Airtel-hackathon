@@ -95,3 +95,4 @@ To prevent scope creep and ensure compliance with hackathon regulations:
 1. **Live Telco BSS/OSS Integration:** The prototype interacts with mock Accel Business provisioning adapters, never live telecom switches or production Airtel APIs.
 2. **Real Payment Gateway Settlement:** All transactions use simulated payment confirmation; no real payment card or UPI gateway is integrated.
 3. **Live Government GST/Udyam API Integration:** Real API integration with the Ministry of Corporate Affairs or GSTN portal is replaced with high-fidelity mock services utilizing `mock_gstin_registry.csv` and `mock_udyam_registry.csv`.
+

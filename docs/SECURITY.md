@@ -57,3 +57,4 @@ Project Udyam Digital treats user privacy and data security as foundational arch
 | **Denial of Service (DoS)** | Brute force or endpoint flooding | `express-rate-limit` enforces a ceiling of 500 requests per 15-minute window per IP. |
 | **Unrestricted File Upload** | Executable scripts (.exe, .php, .js) masquerading as documents | Multer middleware checks both file extension and genuine MIME type (`image/jpeg`, `image/png`, `application/pdf`) with a strict 5MB size ceiling. |
 | **Sensitive Data Exposure** | Accidental commit of API keys or secrets in source code | Centralized `.env` management with `.env.example`. Zero API keys or private credentials embedded in client bundles. |
+

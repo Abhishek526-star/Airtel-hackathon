@@ -6,9 +6,9 @@ export const OnboardingProvider = ({ children }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedBundle, setSelectedBundle] = useState(null);
   const [cartItems, setCartItems] = useState([
-    { productId: 'PROD-BB-200', quantity: 1 },
-    { productId: 'PROD-IOT-POS', quantity: 1 },
-    { productId: 'PROD-WABA-LITE', quantity: 1 },
+    { productId: 'P01', quantity: 1 },
+    { productId: 'P07', quantity: 2 },
+    { productId: 'P19', quantity: 1 },
   ]);
   const [contractDuration, setContractDuration] = useState(12);
   const [activeQuote, setActiveQuote] = useState(null);

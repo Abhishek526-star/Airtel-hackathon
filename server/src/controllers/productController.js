@@ -9,25 +9,27 @@ exports.getProducts = async (req, res, next) => {
     let query = { isActive: true };
 
     if (category) {
-      query.category = category;
+      query.category = { $regex: category, $options: 'i' };
     }
 
     if (cityTier) {
-      query.cityTier = { $in: [cityTier, 'Tier 1 / Tier 2 / Tier 3', 'Tier 1 / Tier 2'] };
+      const cleanTier = cityTier.replace(/Tier\s*/i, '').trim();
+      query.availableCityTiers = { $in: [cleanTier, cityTier] };
     }
 
     if (gstinOnly === 'true') {
-      query.gstinRequired = true;
+      query.requiresGstin = true;
     }
 
     if (search) {
       query.$or = [
         { productName: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
+        { productId: { $regex: search, $options: 'i' } },
       ];
     }
 
-    const products = await Product.find(query).sort({ category: 1, monthlyPrice: 1 });
+    const products = await Product.find(query).sort({ productId: 1 });
 
     res.status(200).json({
       success: true,
@@ -74,7 +76,8 @@ exports.getProductById = async (req, res, next) => {
 // @access  Public
 exports.validateSelection = async (req, res, next) => {
   try {
-    const { productIds = [], cityTier = 'Tier 1', hasGstin = false } = req.body;
+    const { productIds = [], cityTier = '1', hasGstin = false } = req.body;
+    const cleanTier = cityTier.replace(/Tier\s*/i, '').trim();
 
     const products = await Product.find({ productId: { $in: productIds } });
     const selectedProductIds = new Set(products.map((p) => p.productId));
@@ -84,7 +87,7 @@ exports.validateSelection = async (req, res, next) => {
 
     for (const prod of products) {
       // Check GSTIN Requirement
-      if (prod.gstinRequired && !hasGstin) {
+      if (prod.requiresGstin && !hasGstin) {
         errors.push({
           productId: prod.productId,
           productName: prod.productName,
@@ -93,13 +96,15 @@ exports.validateSelection = async (req, res, next) => {
       }
 
       // Check City Tier
-      const isTierValid = prod.cityTier.some((t) => t.includes(cityTier));
-      if (!isTierValid) {
-        errors.push({
-          productId: prod.productId,
-          productName: prod.productName,
-          issue: `Product is not available in ${cityTier}.`,
-        });
+      if (prod.availableCityTiers && prod.availableCityTiers.length > 0) {
+        const isTierValid = prod.availableCityTiers.includes(cleanTier);
+        if (!isTierValid) {
+          errors.push({
+            productId: prod.productId,
+            productName: prod.productName,
+            issue: `Product is not available in Tier ${cleanTier}.`,
+          });
+        }
       }
 
       // Check Dependencies

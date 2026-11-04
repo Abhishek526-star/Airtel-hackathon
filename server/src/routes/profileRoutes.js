@@ -8,3 +8,4 @@ router.get('/', profileController.getProfile);
 router.put('/', profileController.updateProfile);
 
 module.exports = router;
+

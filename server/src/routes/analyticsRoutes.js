@@ -8,3 +8,4 @@ router.get('/funnel', analyticsController.getFunnel);
 router.get('/cohort', analyticsController.getCohortAnalytics);
 
 module.exports = router;
+

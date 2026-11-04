@@ -172,3 +172,4 @@ class KYCService {
 }
 
 module.exports = new KYCService();
+

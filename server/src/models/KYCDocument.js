@@ -79,3 +79,4 @@ const kycDocumentSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model('KYCDocument', kycDocumentSchema);
+

@@ -85,3 +85,4 @@ class PricingService {
 }
 
 module.exports = new PricingService();
+

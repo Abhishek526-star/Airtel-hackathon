@@ -11,3 +11,4 @@ router.get('/leads/:id', partnerController.getLeadDetails);
 router.post('/leads/:id/assist-kyc', partnerController.assistKyc);
 
 module.exports = router;
+

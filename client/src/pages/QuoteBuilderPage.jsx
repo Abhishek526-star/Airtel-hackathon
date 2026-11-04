@@ -39,12 +39,12 @@ const QuoteBuilderPage = () => {
   const [isLocking, setIsLocking] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Optional add-ons ready to add with 1 click
+  // Optional add-ons from official company catalogue
   const availableAddons = [
-    { productId: 'PROD-IP-STAT', name: 'Static IP Address Add-on', price: 350, desc: 'Public IPv4 for remote CCTV monitoring and hosted servers' },
-    { productId: 'PROD-SIM-VOICE1', name: 'Corporate Voice SIM (10GB)', price: 299, desc: 'Additional post-paid commercial SIM with unlimited CUG calls' },
-    { productId: 'PROD-SEC-DNS', name: 'CyberShield DNS Protection', price: 199, desc: 'Router-level ransomware, malware, and phishing block' },
-    { productId: 'PROD-CLD-BAK', name: 'Cloud Backup Vault (250GB)', price: 499, desc: 'Automated encrypted backup for Tally & accounting files' },
+    { productId: 'P11', name: 'Static IP', price: 200, desc: 'Fixed public IP for CCTV, servers or remote access' },
+    { productId: 'P07', name: 'Business Postpaid 299', price: 299, desc: '50 GB data, unlimited corporate CUG calling' },
+    { productId: 'P17', name: 'Cloud Backup 1 TB', price: 499, desc: 'Automatic backup of PCs and accounting archives' },
+    { productId: 'P20', name: 'Endpoint Security', price: 99, desc: 'Antivirus and ransomware protection per device' },
   ];
 
   // Recalculate price when cartItems or contractDuration changes

@@ -117,3 +117,4 @@ The persistent data model is optimized for high-performance self-service onboard
 | `hasGstin` | Boolean | Indexed | 70.5% true, 29.5% false |
 | `status` | String | Enum | `Activated` (368 total = 7.36%), `KYC Dropped`, etc. |
 | `leadToActivationDays` | Number | Nullable | Average 17.6 days for activated cohort |
+

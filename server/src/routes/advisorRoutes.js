@@ -6,3 +6,4 @@ router.post('/chat', advisorController.chat);
 router.post('/recommend', advisorController.recommend);
 
 module.exports = router;
+

@@ -108,3 +108,4 @@ npm run dev --prefix server
 # Terminal 2: Frontend Client (Port 5173)
 npm run dev --prefix client
 ```
+

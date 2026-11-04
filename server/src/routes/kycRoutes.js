@@ -10,3 +10,4 @@ router.post('/upload', upload.single('document'), kycController.uploadDocument);
 router.get('/status', kycController.getStatus);
 
 module.exports = router;
+

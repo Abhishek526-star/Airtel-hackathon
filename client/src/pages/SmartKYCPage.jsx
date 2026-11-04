@@ -32,11 +32,11 @@ const SmartKYCPage = () => {
   const [uploadResult, setUploadResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Sample one-click test documents from mock registries
+  // Real one-click test records from company's mock registries
   const demoSamples = [
-    { label: 'Gupta Supermart (Active GSTIN)', id: '07AAAAA0000A1Z5', docType: 'GST_CERTIFICATE' },
-    { label: 'Sen & Associates Legal (Active Udyam)', id: 'UDYAM-DL-01-0067890', docType: 'UDYAM_CERTIFICATE' },
-    { label: 'Speedy Cargo (Cancelled GSTIN - Test Failure)', id: '07AAACS9911L1Z0', docType: 'GST_CERTIFICATE' },
+    { label: 'Balaji Dental Care (Active GSTIN)', id: '32TTNXB7384T1ZW', docType: 'GST_CERTIFICATE' },
+    { label: 'Balaji Dental (Active Udyam)', id: 'UDYAM-KL-00-3078801', docType: 'UDYAM_CERTIFICATE' },
+    { label: 'Vindhya Tours (Cancelled GSTIN - Rejection Test)', id: '37IHKXV5167L1ZS', docType: 'GST_CERTIFICATE' },
   ];
 
   const handleConsentSubmit = async () => {

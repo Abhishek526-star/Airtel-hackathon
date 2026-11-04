@@ -9,20 +9,32 @@ const productSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    category: {
+      type: String,
+      required: true,
+      index: true,
+    },
     productName: {
       type: String,
       required: true,
       trim: true,
     },
-    category: {
+    description: {
       type: String,
-      required: true,
-      enum: ['Broadband', 'Voice/Mobile', 'Cloud', 'Security', 'IoT'],
-      index: true,
+      default: '',
     },
-    speedBandwidth: {
+    unit: {
       type: String,
-      default: 'N/A',
+      default: 'per site',
+    },
+    priceMin: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    priceMax: {
+      type: Number,
+      default: 0,
     },
     monthlyPrice: {
       type: Number,
@@ -37,27 +49,34 @@ const productSchema = new mongoose.Schema(
     contractDurationMonths: {
       type: Number,
       default: 12,
-      enum: [12, 24, 36],
     },
-    cityTier: {
+    availableCityTiers: {
       type: [String],
-      default: ['Tier 1', 'Tier 2', 'Tier 3'],
-    },
-    gstinRequired: {
-      type: Boolean,
-      default: false,
+      default: ['1', '2'],
     },
     minEmployees: {
       type: Number,
       default: 1,
     },
+    minSites: {
+      type: Number,
+      default: 1,
+    },
+    requiresGstin: {
+      type: Boolean,
+      default: false,
+    },
     dependencies: {
       type: [String],
       default: [],
     },
-    description: {
-      type: String,
-      default: '',
+    typicalInstallDays: {
+      type: Number,
+      default: 5,
+    },
+    targetSegments: {
+      type: [String],
+      default: [],
     },
     isActive: {
       type: Boolean,

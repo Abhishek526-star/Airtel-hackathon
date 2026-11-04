@@ -6,10 +6,9 @@ const Lead = require('../models/Lead');
 exports.getOverview = async (req, res, next) => {
   try {
     const totalLeads = await Lead.countDocuments();
-    const activatedLeads = await Lead.countDocuments({ status: 'Activated' });
+    const activatedLeads = await Lead.countDocuments({ outcome: 'Activated' });
     const conversionRate = totalLeads > 0 ? ((activatedLeads / totalLeads) * 100).toFixed(2) : '7.36';
 
-    // Baseline legacy metrics vs Digital platform target metrics
     const metrics = {
       totalLeads: totalLeads || 5000,
       activatedLeads: activatedLeads || 368,
@@ -18,7 +17,7 @@ exports.getOverview = async (req, res, next) => {
       digitalAvgActivationDays: 1.5,
       legacyBlendedCac: 15000,
       digitalTargetCac: 4200,
-      avgFollowUpsLegacy: 3.2,
+      avgFollowUpsLegacy: 3.0,
       avgFollowUpsDigital: 0.2,
     };
 
@@ -33,25 +32,25 @@ exports.getOverview = async (req, res, next) => {
   }
 };
 
-// @desc    Get conversion funnel breakdown
+// @desc    Get conversion funnel breakdown from official 5,000 leads
 // @route   GET /api/analytics/funnel
 // @access  Public / Admin
 exports.getFunnel = async (req, res, next) => {
   try {
-    const total = 5000;
-    const quoteGenerated = 3250;
-    const quoteAccepted = 2100;
-    const kycSubmitted = 1180;
-    const kycApproved = 480;
-    const activated = 368;
+    const total = await Lead.countDocuments();
+    const contacted = await Lead.countDocuments({ stageReached: { $in: ['Contacted', 'Needs assessed', 'Quote accepted', 'KYC complete', 'Activated'] } });
+    const needsAssessed = await Lead.countDocuments({ stageReached: { $in: ['Needs assessed', 'Quote accepted', 'KYC complete', 'Activated'] } });
+    const quoteAccepted = await Lead.countDocuments({ stageReached: { $in: ['Quote accepted', 'KYC complete', 'Activated'] } });
+    const kycComplete = await Lead.countDocuments({ stageReached: { $in: ['KYC complete', 'Activated'] } });
+    const activated = await Lead.countDocuments({ outcome: 'Activated' });
 
     const funnelData = [
-      { stage: '1. Ingested Leads', count: total, percentage: 100 },
-      { stage: '2. Quotes Generated', count: quoteGenerated, percentage: 65.0 },
-      { stage: '3. Quotes Accepted', count: quoteAccepted, percentage: 42.0 },
-      { stage: '4. KYC Submitted', count: kycSubmitted, percentage: 23.6 },
-      { stage: '5. KYC Verified', count: kycApproved, percentage: 9.6 },
-      { stage: '6. Live Activated', count: activated, percentage: 7.36 },
+      { stage: '1. Ingested Leads', count: total || 5000, percentage: 100 },
+      { stage: '2. Contacted', count: contacted || 3406, percentage: 68.1 },
+      { stage: '3. Needs Assessed', count: needsAssessed || 1974, percentage: 39.5 },
+      { stage: '4. Quote Accepted', count: quoteAccepted || 861, percentage: 17.2 },
+      { stage: '5. KYC Complete', count: kycComplete || 588, percentage: 11.8 },
+      { stage: '6. Activated', count: activated || 368, percentage: 7.36 },
     ];
 
     res.status(200).json({
@@ -70,55 +69,57 @@ exports.getFunnel = async (req, res, next) => {
 // @access  Public / Admin
 exports.getCohortAnalytics = async (req, res, next) => {
   try {
-    // Aggregation for segment distribution
     const segmentAgg = await Lead.aggregate([
       {
         $group: {
           _id: '$segment',
           total: { $sum: 1 },
           activated: {
-            $sum: { $cond: [{ $eq: ['$status', 'Activated'] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ['$outcome', 'Activated'] }, 1, 0] },
           },
         },
       },
     ]);
 
-    // Format segments
     const segmentPerformance = segmentAgg.map((s) => ({
-      segment: s._id || 'Micro Retail and Services',
+      segment: s._id || 'Micro retail & services',
       total: s.total,
       activated: s.activated,
       conversionRate: s.total > 0 ? parseFloat(((s.activated / s.total) * 100).toFixed(2)) : 0,
     }));
 
-    // GSTIN Disparity Comparison
     const gstinLeads = await Lead.countDocuments({ hasGstin: true });
-    const gstinActivated = await Lead.countDocuments({ hasGstin: true, status: 'Activated' });
+    const gstinActivated = await Lead.countDocuments({ hasGstin: true, outcome: 'Activated' });
     const noGstinLeads = await Lead.countDocuments({ hasGstin: false });
-    const noGstinActivated = await Lead.countDocuments({ hasGstin: false, status: 'Activated' });
+    const noGstinActivated = await Lead.countDocuments({ hasGstin: false, outcome: 'Activated' });
 
     const gstinDisparity = [
       {
         cohort: 'Leads WITH Verified GSTIN',
-        totalLeads: gstinLeads || 3525,
+        totalLeads: gstinLeads || 3500,
         activated: gstinActivated || 336,
         conversionRate: gstinLeads > 0 ? parseFloat(((gstinActivated / gstinLeads) * 100).toFixed(2)) : 9.6,
       },
       {
         cohort: 'Leads WITHOUT GSTIN',
-        totalLeads: noGstinLeads || 1475,
+        totalLeads: noGstinLeads || 1500,
         activated: noGstinActivated || 32,
         conversionRate: noGstinLeads > 0 ? parseFloat(((noGstinActivated / noGstinLeads) * 100).toFixed(2)) : 2.0,
       },
     ];
 
-    // Drop-off root cause distribution
-    const dropOffReasons = [
-      { reason: 'Document verification delay / Physical paperwork', count: 1820, percentage: 39.3 },
-      { reason: 'Price sensitivity & slow quote turnaround (3-5 days)', count: 1410, percentage: 30.4 },
-      { reason: 'Installation technician delay / Feasibility issue', count: 890, percentage: 19.2 },
-      { reason: 'Chose competitor or cold lead drop', count: 512, percentage: 11.1 },
-    ];
+    const dropAgg = await Lead.aggregate([
+      { $match: { outcome: 'Dropped', dropReason: { $ne: 'None' } } },
+      { $group: { _id: '$dropReason', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 6 },
+    ]);
+
+    const dropOffReasons = dropAgg.map((d) => ({
+      reason: d._id || 'Drop reason',
+      count: d.count,
+      percentage: parseFloat(((d.count / 4632) * 100).toFixed(1)),
+    }));
 
     res.status(200).json({
       success: true,

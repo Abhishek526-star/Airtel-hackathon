@@ -94,3 +94,4 @@ const businessProfileSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model('BusinessProfile', businessProfileSchema);
+

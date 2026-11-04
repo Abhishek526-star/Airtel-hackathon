@@ -7,3 +7,4 @@ router.get('/:id', productController.getProductById);
 router.post('/validate-selection', productController.validateSelection);
 
 module.exports = router;
+

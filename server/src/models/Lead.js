@@ -8,80 +8,151 @@ const leadSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    createdDate: {
+      type: String,
+    },
+    leadSource: {
+      type: String,
+      default: 'Website form',
+    },
     businessName: {
       type: String,
       required: true,
     },
+    businessType: {
+      type: String,
+      default: '',
+    },
     segment: {
       type: String,
-      enum: [
-        'Micro Retail and Services',
-        'Professional Offices',
-        'Small Multi-site Businesses',
-        'Small Manufacturers',
-      ],
       index: true,
     },
     city: {
       type: String,
-      default: 'Delhi NCR',
+      default: '',
     },
     cityTier: {
       type: String,
-      enum: ['Tier 1', 'Tier 2', 'Tier 3'],
-      default: 'Tier 1',
+      default: '1',
       index: true,
     },
-    leadSource: {
+    state: {
       type: String,
-      default: 'Direct Digital (Web/Ad)',
+      default: '',
+    },
+    preferredLanguage: {
+      type: String,
+      default: 'English',
+    },
+    employeeCount: {
+      type: Number,
+      default: 1,
+    },
+    numSites: {
+      type: Number,
+      default: 1,
+    },
+    annualTurnoverBand: {
+      type: String,
+      default: '',
     },
     hasGstin: {
       type: Boolean,
-      default: true,
+      default: false,
       index: true,
     },
-    status: {
+    gstin: {
       type: String,
-      enum: [
-        'Lead Ingested',
-        'Quote Generated',
-        'Quote Abandoned',
-        'KYC Dropped',
-        'Installation Dropped',
-        'Lead Cold',
-        'Activated',
-      ],
-      default: 'Lead Ingested',
+      default: '',
+    },
+    hasUdyam: {
+      type: Boolean,
+      default: false,
+    },
+    udyamNumber: {
+      type: String,
+      default: '',
+    },
+    currentInternet: {
+      type: String,
+      default: '',
+    },
+    currentProvider: {
+      type: String,
+      default: '',
+    },
+    monthlyTelecomSpendInr: {
+      type: Number,
+      default: 0,
+    },
+    productsOfInterest: {
+      type: String,
+      default: '',
+    },
+    contactName: {
+      type: String,
+      default: '',
+    },
+    contactRole: {
+      type: String,
+      default: '',
+    },
+    stageReached: {
+      type: String,
+      enum: ['Lead', 'Contacted', 'Needs assessed', 'Quote accepted', 'KYC complete', 'Activated'],
+      default: 'Lead',
+      index: true,
+    },
+    outcome: {
+      type: String,
+      enum: ['Activated', 'Dropped'],
+      default: 'Dropped',
       index: true,
     },
     dropReason: {
       type: String,
       default: 'None',
     },
-    leadToActivationDays: {
+    daysLeadToActivation: {
       type: Number,
       default: null,
     },
-    statusFollowUpCalls: {
+    customerFollowUpCalls: {
       type: Number,
-      default: 3,
+      default: 0,
     },
-    blendedCacInr: {
-      type: Number,
-      default: 15000,
+    bundleProducts: {
+      type: String,
+      default: '',
     },
     monthlyBundleValueInr: {
       type: Number,
-      default: 1499,
+      default: 0,
+    },
+    oneTimeSetupInr: {
+      type: Number,
+      default: 0,
+    },
+    contractMonths: {
+      type: Number,
+      default: 12,
+    },
+    churnedWithin6Months: {
+      type: Boolean,
+      default: false,
     },
     npsScore: {
       type: Number,
-      default: 7,
+      default: null,
     },
+    acquisitionCostInr: {
+      type: Number,
+      default: 15000,
+    },
+    // Derived partner assignment
     assignedPartner: {
       type: String,
-      default: 'Amit Verma (Airtel Channel Partner)',
+      default: 'Amit Verma (Accel Channel Partner)',
     },
     propensityScore: {
       type: Number,

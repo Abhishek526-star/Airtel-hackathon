@@ -3,15 +3,14 @@ const env = require('../../config/env');
 
 class AdvisorService {
   /**
-   * Deterministic Expert Recommendation Matrix (Guaranteed Fallback)
+   * Deterministic Expert Recommendation Matrix using Official Company Products (P01-P25)
    */
   async getRuleBasedRecommendation(profile) {
     const {
-      segment = 'Micro Retail and Services',
-      employees = 2,
+      segment = 'Micro retail & services',
+      employeeCount = 3,
       hasGstin = false,
-      cityTier = 'Tier 1',
-      monthlyBudget = 2000,
+      monthlyBudget = 2500,
       requiresPaymentPos = true,
       requiresWhatsapp = true,
       language = 'en',
@@ -25,112 +24,109 @@ class AdvisorService {
     let reasoning = [];
     let alternatives = [];
 
-    // Rule Logic by Segment
-    if (segment === 'Micro Retail and Services') {
+    // Normalize segment
+    const isMicro = segment.toLowerCase().includes('micro') || segment.toLowerCase().includes('retail');
+    const isOffice = segment.toLowerCase().includes('office') || segment.toLowerCase().includes('prof');
+    const isMulti = segment.toLowerCase().includes('multi');
+
+    if (isMicro) {
       bundleName = 'Retail Express Smart Connect';
-      // Base: 200M or 100M based on budget
-      selectedIds.push(monthlyBudget >= 2000 ? 'PROD-BB-200' : 'PROD-BB-100');
-      // POS M2M Sim for UPI / Card swipe
-      if (requiresPaymentPos && productMap.has('PROD-IOT-POS')) {
-        selectedIds.push('PROD-IOT-POS');
-      }
-      // WhatsApp API
-      if (requiresWhatsapp && productMap.has('PROD-WABA-LITE')) {
-        selectedIds.push('PROD-WABA-LITE');
-      }
-      // Business SIM
-      if (productMap.has('PROD-SIM-VOICE1')) {
-        selectedIds.push('PROD-SIM-VOICE1');
-      }
+      // Base Fibre: P01 (Biz Fibre 100) or P02 (Biz Fibre 300)
+      selectedIds.push(monthlyBudget >= 2500 ? 'P02' : 'P01');
+      // Business Postpaid SIM: P07
+      if (productMap.has('P07')) selectedIds.push('P07');
+      // Cloud POS & Billing: P19
+      if (requiresPaymentPos && productMap.has('P19')) selectedIds.push('P19');
+      // WhatsApp Business API: P15
+      if (requiresWhatsapp && productMap.has('P15')) selectedIds.push('P15');
 
       if (language === 'hi') {
         reasoning = [
-          'आपकी दुकान में UPI और कार्ड पेमेंट्स बिना रुके चलाने के लिए 200 Mbps हाई-स्पीड फाइबर।',
-          'ग्राहकों को बिल और डिलीवरी अपडेट भेजने के लिए ऑफिशियल WhatsApp Business API।',
-          'सप्लायर और कस्टमर कॉल्स को निजी फोन से अलग रखने के लिए एक समर्पित बिज़नेस सिम।',
-          'POS स्वाइप मशीन के लिए हमेशा एक्टिव रहने वाला M2M डेटा सिम।',
+          'आपकी दुकान में UPI और कार्ड पेमेंट्स बिना रुके चलाने के लिए 100/300 Mbps हाई-स्पीड फाइबर (P01/P02)।',
+          'ग्राहकों को बिल और डिलीवरी अपडेट भेजने के लिए ऑफिशियल WhatsApp Business API (P15)।',
+          'सप्लायर और कस्टमर कॉल्स के लिए समर्पित बिज़नेस सिम (P07)।',
+          'डिजिटल बिलिंग और इन्वेंट्री के लिए Cloud POS & Billing (P19)।',
         ];
       } else {
         reasoning = [
-          'High-speed 200 Mbps business fiber ensures zero buffering during peak UPI and QR scan payments.',
-          'Official WhatsApp Business API automates grocery order receipts and customer promos directly.',
-          'Dedicated corporate mobile SIM separates business vendor calls from personal lines.',
-          'M2M POS backup SIM keeps card swipe terminals operational even during main router restarts.',
+          'High-speed Biz Fibre broadband ensures zero buffering during peak UPI and QR scan payments.',
+          'Official WhatsApp Business API (P15) automates order receipts and customer promos directly.',
+          'Dedicated Business Postpaid line (P07) separates vendor calls from personal lines.',
+          'Cloud POS & Billing (P19) enables instant tablet-based billing and inventory tracking.',
         ];
       }
 
       alternatives = [
         {
           name: 'Economy Kirana Starter',
-          productIds: ['PROD-BB-100', 'PROD-IOT-POS'],
-          estimatedMrc: 1098,
-          difference: 'Budget-friendly 100 Mbps broadband without WhatsApp API add-on.',
+          productIds: ['P01', 'P07'],
+          estimatedMrc: 1298,
+          difference: 'Budget-friendly 100 Mbps broadband with business mobile line.',
         },
       ];
-    } else if (segment === 'Professional Offices') {
+    } else if (isOffice) {
       bundleName = 'Professional Office Suite Pro';
-      selectedIds.push('PROD-BB-500');
-      if (productMap.has('PROD-PBX-VIRT')) selectedIds.push('PROD-PBX-VIRT');
-      if (productMap.has('PROD-CLD-M365')) selectedIds.push('PROD-CLD-M365');
-      if (productMap.has('PROD-SEC-DNS')) selectedIds.push('PROD-SEC-DNS');
-      if (productMap.has('PROD-IP-STAT')) selectedIds.push('PROD-IP-STAT');
+      selectedIds.push('P02'); // Biz Fibre 300
+      if (productMap.has('P12')) selectedIds.push('P12'); // Cloud Telephony / SIP
+      if (productMap.has('P16')) selectedIds.push('P16'); // Cloud Email & Office Suite
+      if (productMap.has('P20')) selectedIds.push('P20'); // Endpoint Security
+      if (productMap.has('P11')) selectedIds.push('P11'); // Static IP
 
       if (language === 'hi') {
         reasoning = [
-          '500 Mbps हाई-स्पीड फाइबर कई क्लाइंट वीडियो कॉल्स और भारी दस्तावेज़ डाउनलोड के लिए आदर्श है।',
-          'वर्चुअल क्लाउड PBX एक मुख्य लैंडलाइन नंबर से सभी पार्टनर्स के फोन पर स्मार्ट कॉल ट्रांसफर करता है।',
-          'Microsoft 365 सुरक्षित कॉर्पोरेट ईमेल और 1TB क्लाउड डेटा स्टोरेज प्रदान करता है।',
-          'साइबरशील्ड DNS मैलवेयर और फ़िशिंग हमलों से ऑफिस नेटवर्क को सुरक्षित रखता है।',
+          '300 Mbps हाई-स्पीड फाइबर (P02) कई क्लाइंट वीडियो कॉल्स और भारी दस्तावेज़ डाउनलोड के लिए आदर्श है।',
+          'Cloud Telephony / SIP (P12) एक मुख्य रिसेप्शनिस्ट नंबर से स्मार्ट कॉल ट्रांसफर करता है।',
+          'Cloud Email & Office Suite (P16) सुरक्षित कॉर्पोरेट ईमेल प्रदान करता है।',
+          'Endpoint Security (P20) मैलवेयर और रैंसमवेयर से ऑफिस कंप्यूटरों को सुरक्षित रखता है।',
         ];
       } else {
         reasoning = [
-          '500 Mbps symmetrical fiber supports seamless concurrent HD video conferencing and large file transfers.',
-          'Cloud Virtual PBX provides a single prestigious receptionist number routing calls to associate SIMs.',
-          'Microsoft 365 Business Basic equips your team with secure enterprise email and 1TB encrypted cloud storage.',
-          'CyberShield DNS safeguards confidential client briefs from ransomware and phishing threats.',
+          '300 Mbps symmetrical Biz Fibre (P02) supports seamless concurrent HD video conferencing.',
+          'Cloud Telephony / SIP (P12) provides a single virtual receptionist number with smart call routing.',
+          'Cloud Email & Office Suite (P16) equips your team with secure enterprise email on own domain.',
+          'Endpoint Security (P20) safeguards confidential client briefs from ransomware and malware.',
         ];
       }
 
       alternatives = [
         {
           name: 'Legal / CA Starter Pack',
-          productIds: ['PROD-BB-200', 'PROD-CLD-GSUITE', 'PROD-SEC-DNS'],
-          estimatedMrc: 1908,
-          difference: 'Ideal for 1-3 practitioners using Google Workspace with 200 Mbps broadband.',
+          productIds: ['P01', 'P16', 'P20'],
+          estimatedMrc: 1223,
+          difference: 'Ideal for 1-3 practitioners with 100 Mbps broadband and enterprise email.',
         },
       ];
-    } else if (segment === 'Small Multi-site Businesses') {
+    } else if (isMulti) {
       bundleName = 'Multi-Site SD-WAN Enterprise Connect';
-      selectedIds.push('PROD-BB-500', 'PROD-SDWAN-BR', 'PROD-SIM-POOL');
+      selectedIds.push('P02', 'P09', 'P10', 'P08');
 
       reasoning = [
-        'SD-WAN gateway links branch locations with automated 4G optical failover for 100% billing continuity.',
-        'Pooled corporate voice pack across 5 staff SIM cards with zero internal calling charges.',
-        'High-bandwidth 500 Mbps fiber handling continuous inventory sync between branches.',
+        'Managed SD-WAN (P10) links branch locations with application-priority routing.',
+        'Automatic 4G/5G Failover (P09) guarantees 100% billing continuity even during optical cuts.',
+        'High-bandwidth Biz Fibre (P02) handling continuous inventory sync across sites.',
       ];
     } else {
       // Small Manufacturers
       bundleName = 'Industrial Smart Workshop Connect';
-      selectedIds.push('PROD-BB-200', 'PROD-IOT-TRK', 'PROD-CLD-BAK', 'PROD-IP-STAT');
+      selectedIds.push('P02', 'P17', 'P25', 'P11');
 
       reasoning = [
-        'Cloud Backup Vault secures daily Tally and ERP accounting archives against ransomware or hard drive loss.',
-        'GPS Fleet tracking monitors delivery vehicles and raw material dispatch in real time.',
-        'Dedicated Static IP allows secure remote monitoring of workshop factory CCTV cameras.',
+        'Cloud Backup 1 TB (P17) secures daily Tally and ERP accounting archives against data loss.',
+        'Fleet Tracker (P25) monitors delivery vans and raw material dispatch in real time.',
+        'Fixed Static IP (P11) allows secure remote monitoring of workshop factory CCTV cameras.',
       ];
     }
 
-    // Filter by availability & calculate estimated MRC
     const recommendedProducts = selectedIds
       .map((id) => productMap.get(id))
-      .filter((p) => Boolean(p));
+      .filter(Boolean);
 
     const estimatedMonthlyPrice = recommendedProducts.reduce((sum, p) => sum + p.monthlyPrice, 0);
 
     return {
       bundleName,
       segment,
-      businessSummary: `${profile.tradeName || 'Your business'} (${segment}, ${employees} staff, ${cityTier})`,
+      businessSummary: `${profile.tradeName || profile.businessName || 'Your business'} (${segment})`,
       recommendedProducts,
       estimatedMonthlyPrice,
       reasoning,
@@ -139,27 +135,23 @@ class AdvisorService {
     };
   }
 
-  /**
-   * AI-Assisted Recommendation (calls Gemini API if key is set, otherwise falls back gracefully)
-   */
   async recommendBundle(profile) {
-    // Check if Gemini API key exists
     if (!env.GEMINI_API_KEY) {
       return this.getRuleBasedRecommendation(profile);
     }
 
     try {
-      // Attempt Gemini API call
+      const allProducts = await Product.find({ isActive: true });
       const prompt = `
-You are an expert telecom and digital transformation advisor for Accel Business (Airtel SYNC Hackathon 2026).
-Recommend a bundle from the available products for this Indian MSME profile:
+You are an expert telecom advisor for Accel Business (Airtel SYNC Hackathon 2026).
+Recommend a bundle from the available products (IDs: ${allProducts.map((p) => p.productId).join(', ')}) for this MSME profile:
 Profile: ${JSON.stringify(profile)}
 
-Return strictly valid JSON adhering to this schema:
+Return strictly valid JSON:
 {
   "bundleName": "String",
   "businessSummary": "String",
-  "recommendedProductIds": ["PROD-..."],
+  "recommendedProductIds": ["P01", "P..."],
   "reasoning": ["Bullet point 1", "Bullet point 2"],
   "alternatives": []
 }
@@ -178,7 +170,6 @@ Return strictly valid JSON adhering to this schema:
       );
 
       if (!response.ok) {
-        console.warn('[AI Advisor] Gemini API returned error status, falling back to rule engine.');
         return this.getRuleBasedRecommendation(profile);
       }
 
@@ -186,10 +177,7 @@ Return strictly valid JSON adhering to this schema:
       const content = resData.candidates?.[0]?.content?.parts?.[0]?.text;
       const parsed = JSON.parse(content);
 
-      // Verify product IDs exist in DB
-      const allProducts = await Product.find({ isActive: true });
       const productMap = new Map(allProducts.map((p) => [p.productId, p]));
-
       const recommendedProducts = (parsed.recommendedProductIds || [])
         .map((id) => productMap.get(id))
         .filter(Boolean);
@@ -211,7 +199,6 @@ Return strictly valid JSON adhering to this schema:
         missingInformation: [],
       };
     } catch (err) {
-      console.warn('[AI Advisor] Error invoking Gemini, fallback triggered:', err.message);
       return this.getRuleBasedRecommendation(profile);
     }
   }

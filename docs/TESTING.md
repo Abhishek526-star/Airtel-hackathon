@@ -81,3 +81,4 @@ Total Leads: 5000 Activated: 368 Conv Rate: 7.36%
 | **Gemini API Offline** | Missing API Key / Network failure | AI advisor triggers deterministic expert matrix; returns identical structured JSON bundle without UI error. | **PASSED** |
 | **Invalid Session Token** | Tampered or expired JWT in header | API immediately returns `401 Unauthorized` with structured error code. | **PASSED** |
 | **Oversized Document Upload** | Upload file $> 5\text{MB}$ | Multer intercepts upload and returns `400 Bad Request` with file size limit error. | **PASSED** |
+

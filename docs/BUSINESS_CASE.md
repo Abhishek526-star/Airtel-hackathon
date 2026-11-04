@@ -92,3 +92,4 @@ Rather than replacing Accel's existing field sales force and local channel partn
 - **Phase 1 (Months 1–3):** Rollout to Tier 1 Metros (Delhi NCR, Mumbai, Bengaluru). Focus on Micro Retail and Professional Offices. Target: 15% conversion.
 - **Phase 2 (Months 4–6):** Expansion to Tier 2 Commercial Hubs (Pune, Jaipur, Ludhiana). Enablement of regional languages (Hindi, Tamil, Telugu).
 - **Phase 3 (Months 7–12):** National rollout across Tier 3 industrial clusters. Full integration of IoT vehicle tracking and multi-site SD-WAN bundles.
+

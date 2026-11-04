@@ -94,3 +94,4 @@ We utilize standard web font stacks prioritizing **Inter** and modern sans-serif
 - **Desktop (1025px+):**
   - Side-by-side split layouts (e.g., Left: Advisor Chat; Right: Live Dynamic Bundle Preview).
   - Fixed persistent enterprise top bar and left navigation sidebar for Partner and Admin dashboards.
+

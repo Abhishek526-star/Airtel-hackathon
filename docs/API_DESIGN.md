@@ -124,3 +124,4 @@ When an error occurs:
 | `GET` | `/api/analytics/overview` | Admin | Macro metrics: conversion rate, blended CAC, average activation days, MRR. |
 | `GET` | `/api/analytics/funnel` | Admin | 6-stage funnel drop-off metrics (Lead $\to$ Quote $\to$ KYC $\to$ Activation). |
 | `GET` | `/api/analytics/cohort` | Admin | Segment breakdowns, GSTIN disparity analysis, and city tier metrics. |
+

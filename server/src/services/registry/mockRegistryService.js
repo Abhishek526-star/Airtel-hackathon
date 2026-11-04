@@ -20,23 +20,21 @@ class MockRegistryService {
         .pipe(csv())
         .on('data', (row) => {
           if (row.gstin) {
-            this.gstinRegistry.set(row.gstin.trim().toUpperCase(), {
-              gstin: row.gstin.trim().toUpperCase(),
-              legalName: row.legal_name,
-              tradeName: row.trade_name,
+            const cleanGstin = row.gstin.trim().toUpperCase();
+            this.gstinRegistry.set(cleanGstin, {
+              gstin: cleanGstin,
+              legalName: row.legal_name || row.trade_name || 'Business Entity',
+              tradeName: row.trade_name || row.legal_name || 'Business Entity',
+              constitution: row.constitution || 'Proprietorship',
+              address: row.principal_place_of_business || '',
+              state: row.state || '',
+              registrationDate: row.registration_date || '',
               status: row.status ? row.status.toUpperCase() : 'ACTIVE',
-              registrationDate: row.registration_date,
-              taxpayerType: row.taxpayer_type,
-              address: row.address,
-              city: row.city,
-              state: row.state,
-              pincode: row.pincode,
-              authorizedSignatory: row.authorized_signatory,
             });
           }
         })
         .on('end', () => {
-          console.log(`[MockRegistry] Loaded ${this.gstinRegistry.size} GSTIN records.`);
+          console.log(`[MockRegistry] Loaded ${this.gstinRegistry.size} official company GSTIN records.`);
         });
     }
 
@@ -45,22 +43,22 @@ class MockRegistryService {
         .pipe(csv())
         .on('data', (row) => {
           if (row.udyam_number) {
-            this.udyamRegistry.set(row.udyam_number.trim().toUpperCase(), {
-              udyamNumber: row.udyam_number.trim().toUpperCase(),
-              enterpriseName: row.enterprise_name,
-              enterpriseType: row.enterprise_type,
-              majorActivity: row.major_activity,
-              status: row.status ? row.status.toUpperCase() : 'ACTIVE',
-              city: row.city,
-              state: row.state,
-              pincode: row.pincode,
-              authorizedSignatory: row.authorized_signatory,
-              linkedGstin: row.linked_gstin,
+            const cleanUdyam = row.udyam_number.trim().toUpperCase();
+            this.udyamRegistry.set(cleanUdyam, {
+              udyamNumber: cleanUdyam,
+              enterpriseName: row.enterprise_name || 'MSME Enterprise',
+              enterpriseType: row.enterprise_type || 'Micro',
+              majorActivity: row.major_activity || 'Services',
+              nicDescription: row.nic_description || '',
+              state: row.state || '',
+              city: row.city || '',
+              registrationDate: row.date_of_registration || '',
+              status: 'ACTIVE',
             });
           }
         })
         .on('end', () => {
-          console.log(`[MockRegistry] Loaded ${this.udyamRegistry.size} Udyam records.`);
+          console.log(`[MockRegistry] Loaded ${this.udyamRegistry.size} official company Udyam records.`);
           this.isLoaded = true;
         });
     }

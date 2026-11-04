@@ -65,3 +65,4 @@ const Stepper = ({ currentStep = 1, onStepClick }) => {
 };
 
 export default Stepper;
+

@@ -9,3 +9,4 @@ router.get('/:id', authenticate, quoteController.getQuoteById);
 router.post('/:id/accept', authenticate, quoteController.acceptQuote);
 
 module.exports = router;
+

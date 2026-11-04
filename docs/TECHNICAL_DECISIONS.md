@@ -97,3 +97,4 @@ In accordance with Phase 4, Phase 7, and Phase 10 guidelines:
 2. **Mock GSTIN Registry:** Contains real-format 15-character Indian GSTINs with active, cancelled, and suspended statuses for realistic demo scenarios.
 3. **Mock Udyam Registry:** Contains 19-character Udyam registration numbers (`UDYAM-XX-00-0000000`) with matching enterprise names.
 4. **SMB Leads Cohort:** Contains the 5,000 synthetic leads matching the exact case-study baseline metrics (368 activations, 7.36% conversion, 17.6 days avg lead-to-activation time, ₹15,000 CAC).
+

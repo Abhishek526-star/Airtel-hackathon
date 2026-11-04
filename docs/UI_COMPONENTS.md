@@ -63,3 +63,4 @@ The frontend architecture implements an atomic, modular component library locate
 | **SCR-12** | `/partner/dashboard` | **Sales Partner Portal** | Assigned lead pipeline, abandoned quote alerts, assisted KYC upload and override actions. |
 | **SCR-13** | `/admin/analytics` | **Executive Analytics** | 5,000 lead cohort metrics, 6-stage funnel drop-off chart, CAC comparison, city tier performance. |
 | **SCR-14** | `/catalogue` | **Product Catalogue** | Grid of all 25 products, search bar, category tabs, filter by tier and GSTIN requirement. |
+

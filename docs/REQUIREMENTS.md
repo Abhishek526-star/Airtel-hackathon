@@ -164,3 +164,4 @@ Based on the empirical distribution from Accel's 5,000-lead case study cohort, t
 1. **Airtel / Accel Branding Boundary:** The platform adopts the red/dark-slate visual identity inspired by Airtel SYNC Hackathon 2026, while explicitly stating: *"Accel Business Prototype — Demonstration for Airtel SYNC Hackathon 2026. Not connected to live production Airtel telecom networks."*
 2. **DPDP Compliance Notice:** Users are presented with clear, granular consent checkmarks informing them that their GST and Udyam details are utilized exclusively for mock telecom KYC validation.
 3. **No Financial Risk:** All checkout and payment triggers are clearly marked as *"Simulated Digital Checkout (Hackathon Demo Mode)"*. No real credit card or bank credentials are collected or stored.
+
