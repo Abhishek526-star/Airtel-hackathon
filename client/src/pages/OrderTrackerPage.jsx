@@ -13,7 +13,10 @@ import {
   HardHat, 
   Wifi, 
   ArrowRight, 
-  Zap
+  Zap,
+  Download,
+  FileText,
+  Check
 } from 'lucide-react';
 
 const OrderTrackerPage = () => {
@@ -24,7 +27,46 @@ const OrderTrackerPage = () => {
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdvancing, setIsAdvancing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  const handleDownloadInvoice = async () => {
+    try {
+      setIsDownloading(true);
+      const token = localStorage.getItem('udyam_token');
+      const orderIdentifier = order?.orderId || id;
+      const endpoint = `/api/invoices/download?orderId=${encodeURIComponent(orderIdentifier)}`;
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to download invoice (status: ${response.status})`);
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      const cleanId = String(orderIdentifier).replace('ORD-', '');
+      a.download = `ACCEL-B2B-INVOICE-${cleanId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3500);
+    } catch (err) {
+      console.error('Invoice download failed:', err);
+      alert('Could not download GST Tax Invoice. Please ensure server is reachable.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   useEffect(() => {
     fetchOrderDetails();
@@ -109,17 +151,29 @@ const OrderTrackerPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             {order?.orderStatus === 'ACTIVATED' ? (
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => navigate('/dashboard')}
-                icon={ArrowRight}
-                className="text-xs"
-              >
-                {t('tracker.businessDashBtn', 'Go to Business Dashboard')}
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={handleDownloadInvoice}
+                  isLoading={isDownloading}
+                  icon={downloadSuccess ? Check : Download}
+                  className={`text-xs ${downloadSuccess ? 'text-emerald-600 border-emerald-300 bg-emerald-50' : ''}`}
+                >
+                  {downloadSuccess ? t('dashboard.downloadSuccess', 'Invoice Downloaded!') : t('dashboard.downloadPdfInvoice', 'Download Tax Invoice (PDF)')}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => navigate('/dashboard')}
+                  icon={ArrowRight}
+                  className="text-xs"
+                >
+                  {t('tracker.businessDashBtn', 'Go to Business Dashboard')}
+                </Button>
+              </>
             ) : (
               /* Reviewer Demo Shortcut Button */
               <Button
@@ -177,6 +231,27 @@ const OrderTrackerPage = () => {
                     <div className="text-[10px] text-emerald-200 uppercase font-bold">{t('tracker.slaHealth', 'SLA Health')}</div>
                     <div className="font-bold text-emerald-300">99.8% Guaranteed</div>
                   </div>
+                </div>
+
+                <div className="pt-3 border-t border-white/20 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <span className="text-emerald-100 flex items-center space-x-2">
+                    <FileText className="w-4 h-4 text-emerald-200 shrink-0" />
+                    <span>{t('tracker.invoiceReadyText', 'Official B2B Telecom GST Tax Invoice generated and archived.')}</span>
+                  </span>
+                  <button
+                    onClick={handleDownloadInvoice}
+                    disabled={isDownloading}
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white text-emerald-800 font-bold hover:bg-emerald-50 transition shadow-sm text-xs cursor-pointer disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>
+                      {isDownloading 
+                        ? t('dashboard.downloading', 'Downloading...') 
+                        : downloadSuccess 
+                        ? t('dashboard.downloadSuccess', 'Invoice Downloaded!') 
+                        : t('dashboard.downloadPdfInvoice', 'Download Tax Invoice (PDF)')}
+                    </span>
+                  </button>
                 </div>
               </div>
             )}

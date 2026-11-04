@@ -347,3 +347,4 @@ export default {
     registerBusiness: 'வணிகத்தை பதிவு செய்க',
   },
 };
+

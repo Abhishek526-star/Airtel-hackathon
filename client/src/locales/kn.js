@@ -347,3 +347,4 @@ export default {
     registerBusiness: 'ವ್ಯವಹಾರವನ್ನು ನೋಂದಾಯಿಸಿ',
   },
 };
+

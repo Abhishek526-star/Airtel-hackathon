@@ -40,6 +40,31 @@ async function runTests() {
     });
   };
 
+  const downloadPdf = (path) => {
+    return new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'localhost',
+        port: 5002,
+        path,
+        method: 'GET',
+      };
+      const req = http.request(options, (res) => {
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => {
+          const buffer = Buffer.concat(chunks);
+          resolve({
+            status: res.statusCode,
+            headers: res.headers,
+            byteLength: buffer.length,
+          });
+        });
+      });
+      req.on('error', reject);
+      req.end();
+    });
+  };
+
   try {
     console.log('--- TEST 1: Health Check ---');
     const health = await request('/api/health');
@@ -87,7 +112,17 @@ async function runTests() {
     const analytics = await request('/api/analytics/overview');
     console.log('Total Leads:', analytics.data.data.totalLeads, 'Activated:', analytics.data.data.activatedLeads, 'Conv Rate:', analytics.data.data.conversionRate + '%');
 
-    console.log('\n>>> ALL 7 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    console.log('\n--- TEST 8: Official B2B Telecom GST Tax Invoice Vector PDF Generation ---');
+    const invoicePdf = await downloadPdf('/api/invoices/download');
+    console.log('Invoice PDF status:', invoicePdf.status);
+    console.log('Content-Type:', invoicePdf.headers['content-type']);
+    console.log('Content-Disposition:', invoicePdf.headers['content-disposition']);
+    console.log('Generated PDF Size:', invoicePdf.byteLength, 'bytes');
+    if (invoicePdf.status !== 200 || !invoicePdf.headers['content-type']?.includes('application/pdf') || invoicePdf.byteLength < 1000) {
+      throw new Error('Invoice PDF generation failed or file corrupted');
+    }
+
+    console.log('\n>>> ALL 8 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {

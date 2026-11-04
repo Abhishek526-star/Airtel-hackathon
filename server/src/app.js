@@ -18,6 +18,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const partnerRoutes = require('./routes/partnerRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const mockRoutes = require('./routes/mockRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
 
 const app = express();
 
@@ -85,6 +86,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/partner', partnerRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/mock', mockRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // Catch-all 404 handler for undefined API routes
 app.use('/api/*', (req, res) => {

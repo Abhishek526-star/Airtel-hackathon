@@ -347,3 +347,4 @@ export default {
     registerBusiness: 'ബിസിനസ്സ് രജിസ്റ്റർ ചെയ്യുക',
   },
 };
+

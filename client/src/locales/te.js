@@ -347,3 +347,4 @@ export default {
     registerBusiness: 'వ్యాపారాన్ని నమోదు చేయండి',
   },
 };
+

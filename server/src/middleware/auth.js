@@ -57,5 +57,22 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { authenticate, authorize };
+const optionalAuth = async (req, res, next) => {
+  try {
+    let token = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    if (token) {
+      const decoded = jwt.verify(token, env.JWT_SECRET);
+      const user = await User.findById(decoded.id).select('-password').populate('businessProfile');
+      if (user) req.user = user;
+    }
+  } catch {
+    // ignore token errors in optional auth
+  }
+  next();
+};
+
+module.exports = { authenticate, authorize, optionalAuth };
 

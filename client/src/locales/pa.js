@@ -347,3 +347,4 @@ export default {
     registerBusiness: 'ਕਾਰੋਬਾਰ ਰਜਿਸਟਰ ਕਰੋ',
   },
 };
+

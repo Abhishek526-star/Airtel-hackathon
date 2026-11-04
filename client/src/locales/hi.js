@@ -347,3 +347,4 @@ export default {
     registerBusiness: 'व्यवसाय पंजीकृत करें',
   },
 };
+
