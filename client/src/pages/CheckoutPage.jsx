@@ -1,0 +1,273 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useOnboarding } from '../context/OnboardingContext';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+import Stepper from '../components/common/Stepper';
+import Button from '../components/common/Button';
+import Badge from '../components/common/Badge';
+import { 
+  ShoppingCart, 
+  MapPin, 
+  Calendar, 
+  Clock, 
+  User, 
+  CreditCard, 
+  CheckCircle2, 
+  ShieldCheck,
+  Building2,
+  HardHat
+} from 'lucide-react';
+
+const CheckoutPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { activeQuote, setActiveOrder, setCurrentStep } = useOnboarding();
+
+  const [address, setAddress] = useState(user?.businessProfile?.address?.street || 'Shop 14, Main Market, Sector 18');
+  const [city, setCity] = useState(user?.businessProfile?.address?.city || 'Noida');
+  const [pincode, setPincode] = useState(user?.businessProfile?.address?.pincode || '201301');
+  const [contactName, setContactName] = useState(user?.fullName || 'Rajesh Gupta');
+  const [contactPhone, setContactPhone] = useState(user?.phone || '9810123456');
+  const [timeSlot, setTimeSlot] = useState('10:00 AM - 01:00 PM');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handlePlaceOrder = async () => {
+    try {
+      setIsSubmitting(true);
+      setErrorMsg('');
+
+      const res = await api.post('/orders', {
+        quoteId: activeQuote?.quoteId || 'ACCEL-Q-DEFAULT',
+        installationAddress: address,
+        city,
+        pincode,
+        contactPerson: contactName,
+        contactPhone,
+        timeSlot,
+        scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      });
+
+      if (res.success && res.data) {
+        setActiveOrder(res.data);
+        setCurrentStep(5);
+        navigate(`/orders/${res.data.orderId}`);
+      }
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to place order.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <Stepper currentStep={4} />
+
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8">
+        
+        {/* Page Title */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-lg bg-red-100 text-airtel-700 flex items-center justify-center">
+              <ShoppingCart className="w-4 h-4" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">Service Checkout & Installation Scheduling</h1>
+              <p className="text-xs text-slate-500">Confirm site location, field technician appointment, and complete simulated order</p>
+            </div>
+          </div>
+          <Badge variant="brand">Simulated B2B Checkout</Badge>
+        </div>
+
+        {errorMsg && (
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+            {errorMsg}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left Column: Form Details (2 Cols) */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Installation Address Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
+                <MapPin className="w-4 h-4 text-airtel-600" />
+                <span>Installation Site Address</span>
+              </h3>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Building / Shop / Street Address</label>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">City / Region</label>
+                    <input
+                      type="text"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">PIN Code</label>
+                    <input
+                      type="text"
+                      value={pincode}
+                      onChange={(e) => setPincode(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Installation Slot & Field Engineer */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
+                <Calendar className="w-4 h-4 text-airtel-600" />
+                <span>Preferred Installation Window</span>
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { slot: '10:00 AM - 01:00 PM', label: 'Morning Slot' },
+                  { slot: '02:00 PM - 05:00 PM', label: 'Afternoon Slot' },
+                ].map((s) => (
+                  <button
+                    key={s.slot}
+                    type="button"
+                    onClick={() => setTimeSlot(s.slot)}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      timeSlot === s.slot
+                        ? 'border-airtel-600 bg-red-50 text-airtel-700 ring-2 ring-red-500/20'
+                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                    }`}
+                  >
+                    <div className="text-xs font-bold">Tomorrow &bull; {s.label}</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">{s.slot}</div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Assigned Engineer Preview */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-xs">
+                    <HardHat className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">Ramesh Kumar (Enterprise Field Tech)</div>
+                    <div className="text-[11px] text-slate-500">Badge: ENG-DELHI-408 &bull; Fiber & CPE Specialist</div>
+                  </div>
+                </div>
+                <Badge variant="success">Auto-Assigned</Badge>
+              </div>
+            </div>
+
+            {/* Technical Contact Person */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
+                <User className="w-4 h-4 text-airtel-600" />
+                <span>On-Site Technical Contact</span>
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Contact Person Name</label>
+                  <input
+                    type="text"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Mobile Phone</label>
+                  <input
+                    type="text"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Column: Order Summary (1 Col) */}
+          <div className="space-y-4">
+            
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4 sticky top-24">
+              <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3">
+                Order Summary
+              </h3>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Selected Bundle:</span>
+                  <span className="font-semibold text-slate-800">
+                    {activeQuote?.bundleName || 'Customized MSME Bundle'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Contract Lock-in:</span>
+                  <span className="font-semibold text-slate-800">
+                    {activeQuote?.contractDurationMonths || 12} Months
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Recurring Monthly Bill:</span>
+                  <span className="font-bold text-airtel-700">
+                    ₹{(activeQuote?.totalMonthlyAmount || 2351).toLocaleString('en-IN')}/mo
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-slate-200 flex justify-between font-extrabold text-slate-900 text-sm">
+                  <span>Due Today (Simulated):</span>
+                  <span>₹{(activeQuote?.totalOneTimePayable || 2941).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              {/* Simulated Notice */}
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
+                <strong>Simulated Payment Notice:</strong> This is a demonstration prototype for Airtel SYNC 2026. No actual debit/credit card or real funds will be charged.
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  isLoading={isSubmitting}
+                  onClick={handlePlaceOrder}
+                  icon={CheckCircle2}
+                  className="w-full text-sm"
+                >
+                  Confirm Order & Schedule
+                </Button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </main>
+    </div>
+  );
+};
+
+export default CheckoutPage;
+

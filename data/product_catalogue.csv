@@ -1,0 +1,26 @@
+product_id,product_name,category,speed_bandwidth,monthly_price,setup_fee,contract_duration_months,city_tier,gstin_required,min_employees,dependencies,description
+PROD-BB-100,Accel Fiber Business 100M,Broadband,100 Mbps,999,500,12,Tier 1 / Tier 2 / Tier 3,false,1,none,High-speed symmetrical business fiber broadband with 99.5% uptime SLA
+PROD-BB-200,Accel Fiber Business 200M,Broadband,200 Mbps,1499,500,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Fast symmetrical business broadband optimized for digital billing and cloud POS
+PROD-BB-500,Accel Fiber Business 500M,Broadband,500 Mbps,2499,1000,12,Tier 1 / Tier 2,false,3,none,Ultra-fast fiber connectivity designed for multi-user retail and busy offices
+PROD-BB-1G,Accel Fiber Gigabit Prime,Broadband,1 Gbps,4999,1500,24,Tier 1 / Tier 2,true,5,none,Enterprise-grade gigabit fiber with priority traffic routing and 99.8% SLA
+PROD-IP-STAT,Static IP Address Add-on,Broadband,N/A,350,0,12,Tier 1 / Tier 2 / Tier 3,false,1,PROD-BB-100|PROD-BB-200|PROD-BB-500|PROD-BB-1G,Dedicated public static IPv4 for remote CCTV monitoring and hosted servers
+PROD-SIM-VOICE1,Corporate SIM Starter (10GB),Voice/Mobile,4G/5G 10GB,299,0,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Commercial post-paid mobile SIM with unlimited CUG calls and 10GB data
+PROD-SIM-VOICE2,Corporate SIM Pro (30GB),Voice/Mobile,4G/5G 30GB,499,0,12,Tier 1 / Tier 2 / Tier 3,false,1,none,High-usage corporate post-paid SIM with unlimited calling and roaming
+PROD-SIM-POOL,Pooled Corporate Voice Pack (5 SIMs),Voice/Mobile,Pooled 100GB,1999,250,12,Tier 1 / Tier 2,true,5,none,Pooled team data and voice pack across 5 staff SIM cards with single itemized bill
+PROD-PBX-VIRT,Cloud Virtual PBX / Receptionist,Voice/Mobile,Unlimited IVR,799,500,12,Tier 1 / Tier 2 / Tier 3,false,1,PROD-SIM-VOICE1|PROD-SIM-VOICE2|PROD-SIM-POOL,Single virtual business number with automated IVR greeting and smart call hunting
+PROD-WABA-LITE,WhatsApp Business API Starter,Voice/Mobile,1000 msgs/mo,499,200,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Automated order confirmations, payment receipts, and customer alerts via WhatsApp
+PROD-WABA-PRO,WhatsApp Business API Growth,Voice/Mobile,5000 msgs/mo,1499,500,12,Tier 1 / Tier 2,false,1,none,Interactive WhatsApp chatbot, automated catalogue browsing, and multi-agent inbox
+PROD-SEC-DNS,CyberShield DNS Protection,Security,Cloud Native,199,0,12,Tier 1 / Tier 2 / Tier 3,false,1,PROD-BB-100|PROD-BB-200|PROD-BB-500|PROD-BB-1G,Block malware, phishing, and malicious domains directly at the router level
+PROD-SEC-FIRE,NextGen Cloud Firewall,Security,Managed,899,1000,24,Tier 1 / Tier 2,true,5,PROD-BB-200|PROD-BB-500|PROD-BB-1G,Enterprise deep packet inspection, intrusion prevention, and branch VPN gateway
+PROD-SEC-EDR,Endpoint Antivirus & Device Security,Security,3 Devices,399,0,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Centralized endpoint detection, ransomware protection, and USB lockdown
+PROD-CLD-GSUITE,Google Workspace Business Starter,Cloud,30GB Storage,210,0,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Professional custom business email (@company.com), Meet video, and Google Drive
+PROD-CLD-M365,Microsoft 365 Business Basic,Cloud,1TB OneDrive,235,0,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Exchange business email, Teams collaboration, Web Office apps, and 1TB cloud storage
+PROD-CLD-BAK,Cloud Backup Vault (250GB),Cloud,250GB,499,100,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Automated encrypted daily cloud backup for Tally, QuickBooks, and accounting data
+PROD-IOT-POS,POS Digital Gateway SIM,IoT,1GB Secure M2M,99,0,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Ultra-reliable M2M SIM tailored for payment soundboxes, EDC machines, and swipe terminals
+PROD-IOT-CAM,Smart Cloud CCTV Stream Pack,IoT,7-day Cloud,599,300,12,Tier 1 / Tier 2 / Tier 3,false,1,PROD-BB-100|PROD-BB-200|PROD-BB-500|PROD-BB-1G,Continuous 1080p cloud recording for 2 shop cameras with motion alerts on mobile
+PROD-IOT-TRK,Vehicle & Fleet GPS Tracker,IoT,GPS M2M,249,200,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Real-time delivery van tracking, route optimization, and geofence breach alarms
+PROD-TOLL-FREE,National 1800 Toll-Free Line,Voice/Mobile,1000 mins/mo,1299,1000,24,Tier 1 / Tier 2,true,3,none,Prestigious pan-India 1800 customer support number for building brand trust
+PROD-SDWAN-BR,Branch SD-WAN Gateway,Broadband,Dual WAN,1899,1500,24,Tier 1 / Tier 2,true,5,PROD-BB-200|PROD-BB-500|PROD-BB-1G,Automated 4G failover router keeping billing online even during optical cable cuts
+PROD-WIFI-GUEST,Smart Guest Wi-Fi & Marketing,Broadband,Captive Portal,399,200,12,Tier 1 / Tier 2 / Tier 3,false,1,PROD-BB-100|PROD-BB-200|PROD-BB-500|PROD-BB-1G,Branded OTP captive portal collecting customer phone numbers for promotional campaigns
+PROD-TALLY-CLD,Tally on Cloud Multi-User,Cloud,2 Concurrent,999,300,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Access Tally Prime securely from any smartphone or laptop with automatic daily backups
+PROD-HR-ATT,Digital Biometric & Attendance App,Cloud,Up to 15 staff,299,150,12,Tier 1 / Tier 2 / Tier 3,false,1,none,Geo-fenced mobile attendance, leave management, and automated salary slip generator

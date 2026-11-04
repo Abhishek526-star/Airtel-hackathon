@@ -1,0 +1,16 @@
+{
+  "name": "project-udyam-digital",
+  "version": "1.0.0",
+  "description": "Project Udyam Digital - Making Small Businesses Go Digital in One Sitting (Airtel SYNC Hackathon 2026)",
+  "private": true,
+  "scripts": {
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "dev": "npm run dev --prefix server",
+    "seed": "npm run seed --prefix server",
+    "test": "npm run test --prefix server"
+  },
+  "keywords": ["airtel", "accel-business", "msme", "hackathon", "b2b", "onboarding"],
+  "author": "Airtel SYNC Hackathon Team",
+  "license": "ISC"
+}
