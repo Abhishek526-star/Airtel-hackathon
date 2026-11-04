@@ -105,7 +105,32 @@ The platform provides dedicated, role-specific experiences tailored to every act
 
 ---
 
-## 3. Pre-Configured Demo Credentials & Quick Switcher
+## 3. Pan-India Multi-Language Support (10 Official Indian Languages)
+
+To eliminate digital adoption barriers for micro-enterprises across every Indian state, the entire platform provides real-time, zero-reload multilingual localization. The supported languages match the exact distribution found in the official `smb_leads.csv` dataset:
+
+| Code | Language | Native Script | Primary Target States / Regions |
+| :---: | :--- | :--- | :--- |
+| `en` | **English** | English | Pan-India Enterprise Standard |
+| `hi` | **Hindi** | हिंदी | Delhi NCR, UP, MP, Bihar, Rajasthan, Haryana |
+| `ta` | **Tamil** | தமிழ் | Tamil Nadu, Puducherry |
+| `te` | **Telugu** | తెలుగు | Andhra Pradesh, Telangana |
+| `mr` | **Marathi** | मराठी | Maharashtra |
+| `bn` | **Bengali** | বাংলা | West Bengal, Tripura, Assam |
+| `gu` | **Gujarati** | ગુજરાતી | Gujarat, Daman & Diu |
+| `kn` | **Kannada** | ಕನ್ನಡ | Karnataka |
+| `ml` | **Malayalam** | മലയാളം | Kerala, Lakshadweep |
+| `pa` | **Punjabi** | ਪੰਜਾਬੀ | Punjab, Chandigarh |
+
+### Multi-Language Features:
+1. **Interactive Language Selector:** Accessible via the Globe icon dropdown in the top header and mobile drawer. Switching languages immediately reflects across all active components without page reloads.
+2. **AI Business Advisor in Native Language:** Conversational questions and response options are presented in the customer's selected language, reducing apprehension for non-English-speaking Kirana proprietors.
+3. **Smart KYC & DPDP Consent:** Critical consent forms, document upload instructions, and validation diagnoses are clearly explained in the user's native tongue.
+4. **Persistent Preference:** Selected language is stored in browser `localStorage` under `udyam_language_preference` and syncs with HTML `lang` attributes.
+
+---
+
+## 4. Pre-Configured Demo Credentials & Quick Switcher
 
 Use the **"Demo Role" dropdown pill** in the top navigation bar to switch between personas instantly in one click without re-typing passwords:
 
@@ -127,7 +152,7 @@ Use the **"Demo Role" dropdown pill** in the top navigation bar to switch betwee
 
 ---
 
-## 4. Official Company Datasets Integrated
+## 5. Official Company Datasets Integrated
 
 All datasets from `data/` provided for the hackathon are 100% connected:
 
