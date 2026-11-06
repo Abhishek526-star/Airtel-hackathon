@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
@@ -19,6 +20,7 @@ import {
 
 const PartnerDashboardPage = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [leads, setLeads] = useState([]);
   const [stats, setStats] = useState({ 
     kycIssuesCount: 0, 
@@ -87,8 +89,18 @@ const PartnerDashboardPage = () => {
               </h1>
               <Badge variant="brand">{t('partner.badge', 'Assisted Selling Co-Pilot')}</Badge>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              {t('partner.fieldAgent', 'Field Agent: Amit Verma • Accel Enterprise Channel Partner • Delhi NCR')}
+            <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5">
+              <span>Field Agent:</span>
+              <span className="font-semibold text-slate-800">{user?.fullName || 'Amit Verma'}</span>
+              <span>•</span>
+              <span className="font-semibold text-slate-800">{user?.agencyName || 'Accel Enterprise Channel Partner'}</span>
+              <span>•</span>
+              <span className="text-airtel-700 font-semibold">{user?.territoryCircle || 'Delhi NCR'}</span>
+              {user?.partnerCode && (
+                <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px] font-mono text-slate-700">
+                  ID: {user.partnerCode}
+                </span>
+              )}
             </p>
           </div>
           <div className="text-xs text-slate-400">

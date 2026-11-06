@@ -25,6 +25,7 @@ const businessProfileSchema = new mongoose.Schema(
         'Professional Offices',
         'Small Multi-site Businesses',
         'Small Manufacturers',
+        'Telecom Channel Partner',
       ],
       default: 'Micro Retail and Services',
       index: true,

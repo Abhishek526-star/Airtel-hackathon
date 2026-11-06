@@ -34,6 +34,22 @@ const userSchema = new mongoose.Schema(
       default: 'customer',
       index: true,
     },
+    // Partner-specific credentials and assigned circle
+    agencyName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    partnerCode: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    territoryCircle: {
+      type: String,
+      trim: true,
+      default: 'Delhi NCR',
+    },
     businessProfile: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'BusinessProfile',

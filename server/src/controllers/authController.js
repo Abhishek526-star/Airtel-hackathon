@@ -14,7 +14,19 @@ const generateToken = (id, role) => {
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { fullName, email, phone, password, role, businessName, segment, cityTier } = req.body;
+    const {
+      fullName,
+      email,
+      phone,
+      password,
+      role,
+      businessName,
+      segment,
+      cityTier,
+      agencyName,
+      territoryCircle,
+      partnerCode,
+    } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
@@ -29,21 +41,35 @@ exports.register = async (req, res, next) => {
       });
     }
 
+    const assignedRole = role && ['customer', 'partner', 'admin'].includes(role) ? role : 'customer';
+    const isPartner = assignedRole === 'partner';
+
+    const circleClean = (territoryCircle || 'DEL').slice(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const assignedPartnerCode = isPartner
+      ? (partnerCode && partnerCode.trim() ? partnerCode.trim().toUpperCase() : `CP-${circleClean}-${randomSuffix}`)
+      : '';
+    const assignedAgencyName = isPartner ? (agencyName?.trim() || `${fullName} Enterprise Solutions`) : '';
+    const assignedTerritory = isPartner ? (territoryCircle?.trim() || 'Delhi NCR') : 'Delhi NCR';
+
     // Create user
     const user = await User.create({
       fullName,
       email,
       phone,
       password,
-      role: role && ['customer', 'partner', 'admin'].includes(role) ? role : 'customer',
+      role: assignedRole,
+      agencyName: assignedAgencyName,
+      partnerCode: assignedPartnerCode,
+      territoryCircle: assignedTerritory,
     });
 
     // Create associated BusinessProfile
     const profile = await BusinessProfile.create({
       user: user._id,
-      tradeName: businessName || `${fullName}'s Business`,
-      legalName: businessName || '',
-      segment: segment || 'Micro Retail and Services',
+      tradeName: isPartner ? assignedAgencyName : (businessName || `${fullName}'s Business`),
+      legalName: isPartner ? assignedAgencyName : (businessName || ''),
+      segment: isPartner ? 'Telecom Channel Partner' : (segment || 'Micro Retail and Services'),
       address: {
         cityTier: cityTier || 'Tier 1',
       },
@@ -56,7 +82,9 @@ exports.register = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'Account registered successfully. Welcome to Project Udyam Digital.',
+      message: isPartner 
+        ? 'Channel Partner account registered successfully. Welcome to Airtel SYNC Partner Network.'
+        : 'Account registered successfully. Welcome to Project Udyam Digital.',
       data: {
         token,
         user: {
@@ -65,6 +93,9 @@ exports.register = async (req, res, next) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
+          agencyName: user.agencyName,
+          partnerCode: user.partnerCode,
+          territoryCircle: user.territoryCircle,
           businessProfile: profile,
         },
       },
@@ -133,6 +164,9 @@ exports.login = async (req, res, next) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
+          agencyName: user.agencyName,
+          partnerCode: user.partnerCode,
+          territoryCircle: user.territoryCircle,
           businessProfile: user.businessProfile,
         },
       },
@@ -159,6 +193,9 @@ exports.getMe = async (req, res, next) => {
           email: user.email,
           phone: user.phone,
           role: user.role,
+          agencyName: user.agencyName,
+          partnerCode: user.partnerCode,
+          territoryCircle: user.territoryCircle,
           businessProfile: user.businessProfile,
         },
       },

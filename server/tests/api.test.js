@@ -122,7 +122,49 @@ async function runTests() {
       throw new Error('Invoice PDF generation failed or file corrupted');
     }
 
-    console.log('\n>>> ALL 8 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    console.log('\n--- TEST 9: Role-Based Registration (MSME Customer) ---');
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const customerReg = await request('/api/auth/register', 'POST', {
+      fullName: `Test MSME Owner ${randomSuffix}`,
+      email: `msme_owner_${randomSuffix}@testdomain.in`,
+      phone: `9810${randomSuffix}12`,
+      password: 'Password@123',
+      role: 'customer',
+      businessName: `Test Supermart ${randomSuffix}`,
+      segment: 'Micro Retail and Services',
+      cityTier: 'Tier 1',
+    });
+    console.log('Customer Registration status:', customerReg.status);
+    console.log('Registered User Role:', customerReg.data.data?.user?.role);
+    console.log('Business Trade Name:', customerReg.data.data?.user?.businessProfile?.tradeName);
+    if (customerReg.status !== 201 || customerReg.data.data?.user?.role !== 'customer') {
+      throw new Error('Customer registration failed');
+    }
+
+    console.log('\n--- TEST 10: Role-Based Registration (Channel Sales Partner) ---');
+    const partnerReg = await request('/api/auth/register', 'POST', {
+      fullName: `Agent Vikram Sharma ${randomSuffix}`,
+      email: `agent_vikram_${randomSuffix}@partneragency.in`,
+      phone: `9876${randomSuffix}34`,
+      password: 'Password@123',
+      role: 'partner',
+      agencyName: 'Apex Telecom Enterprise Partner',
+      territoryCircle: 'Delhi NCR',
+    });
+    console.log('Partner Registration status:', partnerReg.status);
+    console.log('Registered Partner Role:', partnerReg.data.data?.user?.role);
+    console.log('Partner Agency:', partnerReg.data.data?.user?.agencyName);
+    console.log('Assigned Partner Code:', partnerReg.data.data?.user?.partnerCode);
+    console.log('Territory Circle:', partnerReg.data.data?.user?.territoryCircle);
+    if (
+      partnerReg.status !== 201 ||
+      partnerReg.data.data?.user?.role !== 'partner' ||
+      !partnerReg.data.data?.user?.partnerCode?.startsWith('CP-')
+    ) {
+      throw new Error('Partner registration failed or partner code format invalid');
+    }
+
+    console.log('\n>>> ALL 10 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {
