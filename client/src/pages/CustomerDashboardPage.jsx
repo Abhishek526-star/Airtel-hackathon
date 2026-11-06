@@ -12,8 +12,10 @@ import {
   Printer, 
   X,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  UserCheck
 } from 'lucide-react';
+import RequestAssistanceModal from '../components/partner/RequestAssistanceModal';
 
 const CustomerDashboardPage = () => {
   const { user } = useAuth();
@@ -23,6 +25,7 @@ const CustomerDashboardPage = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isAssistanceModalOpen, setIsAssistanceModalOpen] = useState(false);
 
   useEffect(() => {
     fetchCustomerOrders();
@@ -137,7 +140,16 @@ const CustomerDashboardPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsAssistanceModalOpen(true)}
+              icon={UserCheck}
+              className="text-xs"
+            >
+              Request Field Partner
+            </Button>
             <Button
               variant="secondary"
               size="sm"
@@ -415,6 +427,13 @@ const CustomerDashboardPage = () => {
           </div>
         </div>
       )}
+
+      <RequestAssistanceModal
+        isOpen={isAssistanceModalOpen}
+        onClose={() => setIsAssistanceModalOpen(false)}
+        defaultType="FIELD_VISIT"
+        initialNotes="MSME requests dedicated field site survey and in-person connectivity audit."
+      />
 
     </div>
   );

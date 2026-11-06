@@ -50,6 +50,23 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: 'Delhi NCR',
     },
+    // Partner live availability status & load balancing
+    isAvailable: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    availabilityStatus: {
+      type: String,
+      enum: ['AVAILABLE', 'BUSY', 'OFFLINE'],
+      default: 'AVAILABLE',
+      index: true,
+    },
+    activeAssignedLeadsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     businessProfile: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'BusinessProfile',

@@ -216,17 +216,88 @@ const seedAll = async () => {
       console.log('[Seed] Created Demo Customer: rajesh@guptasupermart.in');
     }
 
-    // Demo Partner (Amit Verma)
-    let partnerUser = await User.findOne({ email: 'partner@accel.com' });
-    if (!partnerUser) {
-      partnerUser = await User.create({
-        fullName: 'Amit Verma (Accel Channel Partner)',
+    // Demo Partners across Key Circles for Location & Availability Matching
+    const demoPartners = [
+      {
+        fullName: 'Amit Verma',
         email: 'partner@accel.com',
         phone: '9871122334',
         password: 'Password@123',
         role: 'partner',
-      });
-      console.log('[Seed] Created Demo Partner: partner@accel.com');
+        agencyName: 'Accel Enterprise Delhi Circle',
+        partnerCode: 'CP-DEL-101',
+        territoryCircle: 'Delhi NCR',
+        isAvailable: true,
+        availabilityStatus: 'AVAILABLE',
+        activeAssignedLeadsCount: 0,
+      },
+      {
+        fullName: 'Vikram Sharma',
+        email: 'vikram.partner@accel.com',
+        phone: '9871122335',
+        password: 'Password@123',
+        role: 'partner',
+        agencyName: 'Apex Telecom NCR Solutions',
+        partnerCode: 'CP-DEL-102',
+        territoryCircle: 'Delhi NCR',
+        isAvailable: true,
+        availabilityStatus: 'AVAILABLE',
+        activeAssignedLeadsCount: 0,
+      },
+      {
+        fullName: 'Rohit Deshmukh',
+        email: 'rohit.mumbai@accel.com',
+        phone: '9820011223',
+        password: 'Password@123',
+        role: 'partner',
+        agencyName: 'Mumbai West Telecom Agency',
+        partnerCode: 'CP-MUM-201',
+        territoryCircle: 'Mumbai Metro',
+        isAvailable: true,
+        availabilityStatus: 'AVAILABLE',
+        activeAssignedLeadsCount: 0,
+      },
+      {
+        fullName: 'Karthik Reddy',
+        email: 'karthik.blr@accel.com',
+        phone: '9845011224',
+        password: 'Password@123',
+        role: 'partner',
+        agencyName: 'Silicon City Enterprise Net',
+        partnerCode: 'CP-BLR-301',
+        territoryCircle: 'Bengaluru Urban',
+        isAvailable: true,
+        availabilityStatus: 'AVAILABLE',
+        activeAssignedLeadsCount: 0,
+      },
+      {
+        fullName: 'Sachin Patil',
+        email: 'sachin.pune@accel.com',
+        phone: '9850011225',
+        password: 'Password@123',
+        role: 'partner',
+        agencyName: 'Pune Metro Digital Connect',
+        partnerCode: 'CP-PUN-401',
+        territoryCircle: 'Pune Hub',
+        isAvailable: true,
+        availabilityStatus: 'AVAILABLE',
+        activeAssignedLeadsCount: 0,
+      },
+    ];
+
+    for (const p of demoPartners) {
+      let existingP = await User.findOne({ email: p.email });
+      if (!existingP) {
+        await User.create(p);
+        console.log(`[Seed] Created Demo Partner: ${p.fullName} (${p.territoryCircle})`);
+      } else {
+        existingP.agencyName = p.agencyName;
+        existingP.partnerCode = p.partnerCode;
+        existingP.territoryCircle = p.territoryCircle;
+        existingP.isAvailable = p.isAvailable;
+        existingP.availabilityStatus = p.availabilityStatus;
+        await existingP.save();
+      }
     }
 
     // Demo Admin (Priya Nair)

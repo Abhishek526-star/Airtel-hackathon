@@ -164,7 +164,114 @@ async function runTests() {
       throw new Error('Partner registration failed or partner code format invalid');
     }
 
-    console.log('\n>>> ALL 10 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    console.log('\n--- TEST 11: Dynamic Partner Assignment by Location & Circle ---');
+    // Customer in Mumbai Metro requests assistance
+    const mumReq = await request('/api/partner/request-assistance', 'POST', {
+      customerName: 'Sanjay Mehta',
+      customerPhone: '9820199887',
+      customerEmail: 'sanjay@mehtaexports.in',
+      businessName: 'Mehta Textile Exports',
+      locationCircle: 'Mumbai Metro',
+      requestType: 'KYC_ASSISTANCE',
+      notes: 'Need on-site partnership deed verification',
+    });
+    console.log('Mumbai Request status:', mumReq.status);
+    console.log('Assigned Request ID:', mumReq.data.data?.request?.requestId);
+    console.log('Assigned Partner:', mumReq.data.data?.assignedPartner?.fullName);
+    console.log('Assigned Partner Circle:', mumReq.data.data?.assignedPartner?.territoryCircle);
+    if (
+      mumReq.status !== 201 ||
+      mumReq.data.data?.assignedPartner?.territoryCircle !== 'Mumbai Metro'
+    ) {
+      throw new Error('Dynamic assignment by location failed: expected Mumbai Metro partner');
+    }
+
+    console.log('\n--- TEST 12: Partner Availability Toggle & Status Route ---');
+    // Login as demo partner (Amit Verma, Delhi NCR)
+    const partnerLogin = await request('/api/auth/login', 'POST', {
+      identifier: 'partner@accel.com',
+      password: 'Password@123',
+    });
+    const partnerToken = partnerLogin.data.data?.token;
+
+    // Toggle availability to BUSY
+    const toggleBusy = await request(
+      '/api/partner/availability',
+      'PATCH',
+      { isAvailable: false, availabilityStatus: 'BUSY' },
+      partnerToken
+    );
+    console.log('Availability toggle status:', toggleBusy.status, 'New status:', toggleBusy.data.data?.availabilityStatus);
+    if (toggleBusy.status !== 200 || toggleBusy.data.data?.availabilityStatus !== 'BUSY') {
+      throw new Error('Availability toggle failed');
+    }
+
+    // Now a Delhi NCR customer requests assistance -> should route to Vikram Sharma (who is AVAILABLE in Delhi NCR)
+    const delReq = await request('/api/partner/request-assistance', 'POST', {
+      customerName: 'Pooja Bhatia',
+      customerPhone: '9811099881',
+      customerEmail: 'pooja@bhatiaopticals.in',
+      businessName: 'Bhatia Opticals',
+      locationCircle: 'Delhi NCR',
+      requestType: 'FIELD_VISIT',
+      notes: 'Site survey for 500M fiber leased line',
+    });
+    console.log('Delhi Request status:', delReq.status);
+    console.log('Assigned Partner (while Amit Verma is BUSY):', delReq.data.data?.assignedPartner?.fullName);
+    if (
+      delReq.status !== 201 ||
+      delReq.data.data?.assignedPartner?.territoryCircle !== 'Delhi NCR' ||
+      delReq.data.data?.assignedPartner?.fullName === 'Amit Verma' // Amit is busy, should pick Vikram Sharma
+    ) {
+      throw new Error('Availability-aware routing failed');
+    }
+
+    // Restore Amit Verma back to AVAILABLE
+    await request(
+      '/api/partner/availability',
+      'PATCH',
+      { isAvailable: true, availabilityStatus: 'AVAILABLE' },
+      partnerToken
+    );
+
+    console.log('\n--- TEST 13: Partner Inbox Retrieval & Lifecycle Status Updates ---');
+    // Login as Vikram Sharma who received the request
+    const vikramLogin = await request('/api/auth/login', 'POST', {
+      identifier: 'vikram.partner@accel.com',
+      password: 'Password@123',
+    });
+    const vikramToken = vikramLogin.data.data?.token;
+
+    const myRequests = await request('/api/partner/my-requests', 'GET', null, vikramToken);
+    console.log('Partner Inbox status:', myRequests.status);
+    console.log('Requests Count:', myRequests.data.data?.requests?.length);
+    console.log('Latest Request ID:', myRequests.data.data?.requests[0]?.requestId);
+    if (myRequests.status !== 200 || !myRequests.data.data?.requests?.length) {
+      throw new Error('Partner failed to retrieve assigned customer requests');
+    }
+
+    // Update status to ACCEPTED then RESOLVED
+    const reqId = myRequests.data.data.requests[0]._id;
+    const acceptRes = await request(
+      `/api/partner/my-requests/${reqId}/status`,
+      'PATCH',
+      { status: 'ACCEPTED' },
+      vikramToken
+    );
+    console.log('Accept status:', acceptRes.status, 'Updated status:', acceptRes.data.data?.status);
+
+    const resolveRes = await request(
+      `/api/partner/my-requests/${reqId}/status`,
+      'PATCH',
+      { status: 'RESOLVED', resolutionNotes: 'Completed on-site survey and provisioned leased line quote.' },
+      vikramToken
+    );
+    console.log('Resolve status:', resolveRes.status, 'Final status:', resolveRes.data.data?.status);
+    if (resolveRes.status !== 200 || resolveRes.data.data?.status !== 'RESOLVED') {
+      throw new Error('Request resolution lifecycle update failed');
+    }
+
+    console.log('\n>>> ALL 13 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {

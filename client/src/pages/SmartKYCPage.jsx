@@ -7,6 +7,7 @@ import api from '../services/api';
 import Stepper from '../components/common/Stepper';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
+import RequestAssistanceModal from '../components/partner/RequestAssistanceModal';
 import { 
   ShieldCheck, 
   UploadCloud, 
@@ -32,6 +33,7 @@ const SmartKYCPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isAssistanceModalOpen, setIsAssistanceModalOpen] = useState(false);
 
   // Real one-click test records from company's mock registries (including planted defect test cases)
   const demoSamples = [
@@ -360,10 +362,10 @@ const SmartKYCPage = () => {
                       <Button
                         variant="primary"
                         size="sm"
-                        onClick={() => navigate('/partner')}
+                        onClick={() => setIsAssistanceModalOpen(true)}
                         className="bg-slate-800 hover:bg-slate-700"
                       >
-                        Escalate to Channel Partner
+                        Request Channel Partner Help
                       </Button>
                     </div>
                   )}
@@ -376,6 +378,13 @@ const SmartKYCPage = () => {
         )}
 
       </main>
+
+      <RequestAssistanceModal
+        isOpen={isAssistanceModalOpen}
+        onClose={() => setIsAssistanceModalOpen(false)}
+        defaultType="KYC_ASSISTANCE"
+        initialNotes="Need in-person assisted KYC verification or physical document review."
+      />
     </div>
   );
 };
