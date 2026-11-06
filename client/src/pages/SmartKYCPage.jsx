@@ -33,11 +33,13 @@ const SmartKYCPage = () => {
   const [uploadResult, setUploadResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Real one-click test records from company's mock registries
+  // Real one-click test records from company's mock registries (including planted defect test cases)
   const demoSamples = [
-    { label: 'Balaji Dental Care (Active GSTIN)', id: '32TTNXB7384T1ZW', docType: 'GST_CERTIFICATE' },
-    { label: 'Balaji Dental (Active Udyam)', id: 'UDYAM-KL-00-3078801', docType: 'UDYAM_CERTIFICATE' },
-    { label: 'Vindhya Tours (Cancelled GSTIN - Rejection Test)', id: '37IHKXV5167L1ZS', docType: 'GST_CERTIFICATE' },
+    { label: 'Balaji Dental Care (Active GSTIN - K01)', id: '32TTNXB7384T1ZW', docType: 'GST_CERTIFICATE', status: 'PASS' },
+    { label: 'Balaji Dental (Active Udyam - K01)', id: 'UDYAM-KL-00-3078801', docType: 'UDYAM_CERTIFICATE', status: 'PASS' },
+    { label: 'Vindhya Tours (Planted Defect: Cancelled GSTIN - K03)', id: '37IHKXV5167L1ZS', docType: 'GST_CERTIFICATE', status: 'REJECT' },
+    { label: 'Electricity Bill (Planted Defect: Expired >90 Days)', id: 'EXP-BILL-2026-JAN', docType: 'ADDRESS_PROOF', status: 'REJECT' },
+    { label: 'Signatory ID (Planted Defect: Name Mismatch)', id: 'MISMATCH-PAN-889', docType: 'SIGNATORY_ID', status: 'REVIEW' },
   ];
 
   const handleConsentSubmit = async () => {
@@ -226,7 +228,7 @@ const SmartKYCPage = () => {
                   <Sparkles className="w-3.5 h-3.5 text-airtel-600" />
                   <span>{t('kyc.testRecordsTitle', 'One-Click Test Records (Mock Registry)')}</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {demoSamples.map((sample, idx) => (
                     <button
                       key={idx}
@@ -234,7 +236,18 @@ const SmartKYCPage = () => {
                       onClick={() => handleUploadAndVerify(sample.id, sample.docType)}
                       className="p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-red-50 hover:border-airtel-500 text-left text-xs font-semibold text-slate-800 transition-all flex flex-col justify-between"
                     >
-                      <span className="truncate">{sample.label}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="truncate pr-1">{sample.label}</span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${
+                          sample.status === 'PASS' 
+                            ? 'bg-emerald-100 text-emerald-800' 
+                            : sample.status === 'REJECT' 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {sample.status}
+                        </span>
+                      </div>
                       <span className="text-[10px] text-slate-400 mt-1 font-mono">{sample.id}</span>
                     </button>
                   ))}
@@ -335,14 +348,24 @@ const SmartKYCPage = () => {
                       {t('kyc.proceedCheckout', 'Proceed to Installation & Checkout')}
                     </Button>
                   ) : (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setUploadResult(null)}
-                      icon={RefreshCw}
-                    >
-                      {t('kyc.tryAnother', 'Try Another Document')}
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setUploadResult(null)}
+                        icon={RefreshCw}
+                      >
+                        {t('kyc.tryAnother', 'Try Another Document')}
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => navigate('/partner')}
+                        className="bg-slate-800 hover:bg-slate-700"
+                      >
+                        Escalate to Channel Partner
+                      </Button>
+                    </div>
                   )}
                 </div>
 

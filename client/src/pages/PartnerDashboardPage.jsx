@@ -10,22 +10,33 @@ import {
   CheckCircle2, 
   ShieldCheck, 
   Search, 
+  Bot,
+  Zap,
+  PhoneCall,
+  ArrowUpDown,
+  Phone
 } from 'lucide-react';
 
 const PartnerDashboardPage = () => {
   const { t } = useTranslation();
   const [leads, setLeads] = useState([]);
-  const [stats, setStats] = useState({ kycIssuesCount: 0, abandonedQuotesCount: 0, activeLeadsCount: 0 });
+  const [stats, setStats] = useState({ 
+    kycIssuesCount: 0, 
+    abandonedQuotesCount: 0, 
+    unclosedLeadsCount: 0, 
+    activeLeadsCount: 0 
+  });
   const [selectedLead, setSelectedLead] = useState(null);
   const [overrideModalOpen, setOverrideModalOpen] = useState(false);
   const [overrideReason, setOverrideReason] = useState('Partner verified physical original partnership deed and trade license on site.');
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('propensity'); // 'propensity' | 'recent'
 
   useEffect(() => {
     fetchPartnerLeads();
-  }, [filterStatus]);
+  }, [filterStatus, sortBy]);
 
   const fetchPartnerLeads = async () => {
     try {
@@ -33,6 +44,7 @@ const PartnerDashboardPage = () => {
       const queryParams = new URLSearchParams();
       if (filterStatus) queryParams.append('status', filterStatus);
       if (searchQuery) queryParams.append('search', searchQuery);
+      if (sortBy) queryParams.append('sortBy', sortBy);
 
       const res = await api.get(`/partner/leads?${queryParams.toString()}`);
       if (res.success && res.data) {
@@ -84,20 +96,20 @@ const PartnerDashboardPage = () => {
           </div>
         </div>
 
-        {/* Metric KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Metric KPI Cards (Stretch Goal #2: Unclosed Leads Dashboard) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div 
-            onClick={() => setFilterStatus('KYC Dropped')}
+            onClick={() => setFilterStatus('Advisor Drop-offs')}
             className={`p-5 rounded-2xl border shadow-sm cursor-pointer transition-all ${
-              filterStatus === 'KYC Dropped' ? 'bg-red-50 border-red-300 ring-2 ring-red-500/20' : 'bg-white border-slate-200 hover:border-slate-300'
+              filterStatus === 'Advisor Drop-offs' ? 'bg-purple-50 border-purple-300 ring-2 ring-purple-500/20' : 'bg-white border-slate-200 hover:border-slate-300'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('partner.kycExceptionsTitle', 'KYC Exceptions')}</span>
-              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Advisor Drop-Offs</span>
+              <Bot className="w-5 h-5 text-purple-600" />
             </div>
-            <div className="text-2xl font-extrabold text-red-600 mt-2">{stats.kycIssuesCount || 18}</div>
-            <p className="text-[11px] text-slate-500 mt-1">{t('partner.kycExceptionsDesc', 'Leads stuck at document verification')}</p>
+            <div className="text-2xl font-extrabold text-purple-600 mt-2">{stats.unclosedLeadsCount || 120}</div>
+            <p className="text-[11px] text-slate-500 mt-1">Unclosed leads requiring partner intervention</p>
           </div>
 
           <div 
@@ -112,6 +124,20 @@ const PartnerDashboardPage = () => {
             </div>
             <div className="text-2xl font-extrabold text-amber-600 mt-2">{stats.abandonedQuotesCount || 14}</div>
             <p className="text-[11px] text-slate-500 mt-1">{t('partner.abandonedQuotesDesc', 'Ready for 1-click WhatsApp follow-up')}</p>
+          </div>
+
+          <div 
+            onClick={() => setFilterStatus('KYC Dropped')}
+            className={`p-5 rounded-2xl border shadow-sm cursor-pointer transition-all ${
+              filterStatus === 'KYC Dropped' ? 'bg-red-50 border-red-300 ring-2 ring-red-500/20' : 'bg-white border-slate-200 hover:border-slate-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('partner.kycExceptionsTitle', 'KYC Exceptions')}</span>
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+            </div>
+            <div className="text-2xl font-extrabold text-red-600 mt-2">{stats.kycIssuesCount || 18}</div>
+            <p className="text-[11px] text-slate-500 mt-1">{t('partner.kycExceptionsDesc', 'Leads stuck at document verification')}</p>
           </div>
 
           <div 
@@ -133,12 +159,12 @@ const PartnerDashboardPage = () => {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           
           {/* Table Header Filter Bar */}
-          <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50">
-            <div className="relative w-full sm:w-72">
+          <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-50">
+            <div className="relative w-full md:w-72">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
-                placeholder={t('partner.searchPlaceholder', 'Search business name...')}
+                placeholder={t('partner.searchPlaceholder', 'Search business or contact name...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchPartnerLeads()}
@@ -146,18 +172,36 @@ const PartnerDashboardPage = () => {
               />
             </div>
 
-            <div className="flex items-center space-x-2 text-xs">
-              <span className="text-slate-500 font-medium">{t('partner.filterStatus', 'Filter Status:')}</span>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-700 font-semibold"
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {/* Stretch Goal #3: Propensity Priority Calling Toggle */}
+              <button
+                type="button"
+                onClick={() => setSortBy(sortBy === 'propensity' ? 'recent' : 'propensity')}
+                className={`px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 transition-all ${
+                  sortBy === 'propensity'
+                    ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-400/40'
+                    : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
+                }`}
+                title="Sort calling queue by highest MSME conversion propensity score"
               >
-                <option value="">{t('partner.allStatuses', 'All Statuses')}</option>
-                <option value="KYC Dropped">KYC Dropped</option>
-                <option value="Quote Abandoned">Quote Abandoned</option>
-                <option value="Activated">Activated</option>
-              </select>
+                <Zap className="w-3.5 h-3.5" />
+                <span>Priority Call Queue (Propensity)</span>
+              </button>
+
+              <div className="flex items-center space-x-1.5">
+                <span className="text-slate-500 font-medium">{t('partner.filterStatus', 'Filter:')}</span>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white text-slate-700 font-semibold"
+                >
+                  <option value="">{t('partner.allStatuses', 'All Statuses')}</option>
+                  <option value="Advisor Drop-offs">Advisor Drop-Offs</option>
+                  <option value="Quote Abandoned">Quote Abandoned</option>
+                  <option value="KYC Dropped">KYC Dropped</option>
+                  <option value="Activated">Activated</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -167,6 +211,7 @@ const PartnerDashboardPage = () => {
               <thead className="bg-slate-100 text-slate-500 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">{t('partner.colBusiness', 'Lead ID & Business')}</th>
+                  <th className="py-3 px-4">Contact / Phone</th>
                   <th className="py-3 px-4">{t('partner.colSegment', 'Segment')}</th>
                   <th className="py-3 px-4">{t('partner.colCity', 'City Tier')}</th>
                   <th className="py-3 px-4">{t('partner.colStatus', 'Status & Diagnostic')}</th>
@@ -177,11 +222,11 @@ const PartnerDashboardPage = () => {
               <tbody className="divide-y divide-slate-100 font-medium">
                 {isLoading ? (
                   <tr>
-                    <td colSpan="6" className="py-8 text-center text-slate-400">Loading assigned leads...</td>
+                    <td colSpan="7" className="py-8 text-center text-slate-400">Loading assigned leads...</td>
                   </tr>
                 ) : leads.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="py-8 text-center text-slate-400">No leads found matching criteria.</td>
+                    <td colSpan="7" className="py-8 text-center text-slate-400">No leads found matching criteria.</td>
                   </tr>
                 ) : (
                   leads.map((lead) => (
@@ -189,6 +234,10 @@ const PartnerDashboardPage = () => {
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900">{lead.businessName}</div>
                         <div className="text-[11px] font-mono text-slate-400">{lead.leadId}</div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="text-slate-800 font-semibold">{lead.contactName || 'Owner / Manager'}</div>
+                        <div className="text-[11px] text-slate-500 font-mono">{lead.contactPhone || '9810123456'}</div>
                       </td>
                       <td className="py-3.5 px-4">{lead.segment}</td>
                       <td className="py-3.5 px-4">
@@ -216,7 +265,13 @@ const PartnerDashboardPage = () => {
                         <div className="flex items-center space-x-1.5">
                           <div className="w-12 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                             <div 
-                              className={`h-full ${lead.hasGstin ? 'bg-emerald-500' : 'bg-amber-500'}`} 
+                              className={`h-full ${
+                                (lead.propensityScore || 75) >= 80 
+                                  ? 'bg-emerald-500' 
+                                  : (lead.propensityScore || 75) >= 60 
+                                  ? 'bg-amber-500' 
+                                  : 'bg-red-500'
+                              }`} 
                               style={{ width: `${lead.propensityScore || 75}%` }}
                             />
                           </div>
@@ -224,33 +279,41 @@ const PartnerDashboardPage = () => {
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        {lead.status === 'KYC Dropped' ? (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedLead(lead);
-                              setOverrideModalOpen(true);
-                            }}
-                            className="text-[11px] py-1 px-2.5"
-                          >
-                            {t('partner.assistKycBtn', 'Assist KYC')}
-                          </Button>
-                        ) : lead.status === 'Quote Abandoned' ? (
+                        <div className="flex items-center justify-end space-x-1.5">
+                          {/* Direct Call Button */}
                           <a
-                            href={`https://wa.me/?text=Hello%20${encodeURIComponent(lead.businessName)},%20your%20Accel%20Business%20quote%20is%20ready%20for%201-click%20activation!`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold"
+                            href={`tel:${lead.contactPhone || '9810123456'}`}
+                            className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 text-[11px] font-bold"
+                            title="Call customer directly"
                           >
-                            <span>{t('partner.whatsAppBtn', 'WhatsApp')}</span>
+                            <Phone className="w-3 h-3 text-slate-600" />
+                            <span className="hidden sm:inline">Call</span>
                           </a>
-                        ) : (
-                          <span className="text-[11px] text-emerald-600 font-semibold flex items-center justify-end space-x-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>{t('partner.liveStatus', 'Live')}</span>
-                          </span>
-                        )}
+
+                          {lead.status === 'KYC Dropped' ? (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedLead(lead);
+                                setOverrideModalOpen(true);
+                              }}
+                              className="text-[11px] py-1 px-2.5"
+                            >
+                              {t('partner.assistKycBtn', 'Assist KYC')}
+                            </Button>
+                          ) : (
+                            <a
+                              href={`https://wa.me/?text=Hello%20${encodeURIComponent(lead.contactName || lead.businessName)},%20your%20customized%20Accel%20Business%20telecom%20bundle%20is%20ready%20for%201-click%20activation!%20Tap%20here%20to%20review.`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold"
+                              title="Send 1-click recovery cart via WhatsApp"
+                            >
+                              <span>{t('partner.whatsAppBtn', 'WhatsApp')}</span>
+                            </a>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

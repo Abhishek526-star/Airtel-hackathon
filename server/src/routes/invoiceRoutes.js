@@ -9,3 +9,4 @@ router.get('/:orderId/pdf', optionalAuth, invoiceController.downloadInvoice);
 router.get('/details', optionalAuth, invoiceController.getInvoiceDetails);
 
 module.exports = router;
+

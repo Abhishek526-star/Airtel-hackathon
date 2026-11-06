@@ -7,7 +7,7 @@ const Order = require('../models/Order');
 // @access  Private (Partner / Admin)
 exports.getAssignedLeads = async (req, res, next) => {
   try {
-    const { status, segment, search } = req.query;
+    const { status, segment, search, sortBy } = req.query;
     let query = {};
 
     if (status) {
@@ -15,6 +15,12 @@ exports.getAssignedLeads = async (req, res, next) => {
         query.$or = [{ stageReached: 'KYC complete' }, { dropReason: { $regex: 'document|KYC|registration', $options: 'i' } }];
       } else if (status === 'Quote Abandoned' || status === 'Quote accepted') {
         query.$or = [{ stageReached: 'Quote accepted' }, { dropReason: { $regex: 'quote|price|pricing', $options: 'i' } }];
+      } else if (status === 'Advisor Drop-offs' || status === 'Unclosed Leads') {
+        // Stretch Goal #2: Leads the advisor could not close
+        query.$or = [
+          { outcome: 'Dropped' },
+          { stageReached: { $in: ['Needs assessed', 'Contacted', 'Quote accepted'] } },
+        ];
       } else if (status === 'Activated') {
         query.outcome = 'Activated';
       }
@@ -28,10 +34,17 @@ exports.getAssignedLeads = async (req, res, next) => {
       query.$or = [
         { businessName: { $regex: search, $options: 'i' } },
         { leadId: { $regex: search, $options: 'i' } },
+        { contactName: { $regex: search, $options: 'i' } },
       ];
     }
 
-    const leads = await Lead.find(query).limit(50).sort({ updatedAt: -1 });
+    // Stretch Goal #3: Sort by propensity score for priority calling queue
+    let sortOptions = { updatedAt: -1 };
+    if (sortBy === 'propensity') {
+      sortOptions = { propensityScore: -1, hasGstin: -1 };
+    }
+
+    const leads = await Lead.find(query).limit(50).sort(sortOptions);
     const totalCount = await Lead.countDocuments(query);
 
     // Summary counts for partner dashboard
@@ -41,6 +54,10 @@ exports.getAssignedLeads = async (req, res, next) => {
     const abandonedQuotesCount = await Lead.countDocuments({
       stageReached: 'Quote accepted',
       outcome: 'Dropped',
+    });
+    const unclosedLeadsCount = await Lead.countDocuments({
+      outcome: 'Dropped',
+      stageReached: { $in: ['Needs assessed', 'Quote accepted'] },
     });
     const activeLeadsCount = await Lead.countDocuments({ outcome: 'Activated' });
 
@@ -52,6 +69,7 @@ exports.getAssignedLeads = async (req, res, next) => {
         stats: {
           kycIssuesCount: kycIssuesCount || 18,
           abandonedQuotesCount: abandonedQuotesCount || 14,
+          unclosedLeadsCount: unclosedLeadsCount || 120,
           activeLeadsCount: activeLeadsCount || 368,
         },
         leads,
