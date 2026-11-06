@@ -132,3 +132,4 @@
 | **2. Field Partner Disintermediation** | Medium | Medium | Commission protection: Partner receives full credit for digital leads in their geo-territory. |
 | **3. Low Digital Literacy in Tier 2/3** | High | Medium | Multilingual voice assistance (Web Speech) + interactive WhatsApp onboarding simulator. |
 | **4. DPDP Act Regulatory Audits** | Low | High | Pre-KYC consent audit trail, strict 90-day retention, and SHA-256 digital document stamps. |
+

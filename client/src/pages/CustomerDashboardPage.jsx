@@ -57,14 +57,15 @@ const CustomerDashboardPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to download invoice (status: ${response.status})`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server returned ${response.status}`);
       }
 
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = downloadUrl;
-      const invoiceSeq = targetOrderId ? targetOrderId.replace('ORD-', '') : '2026-8921';
+      const invoiceSeq = targetOrderId ? targetOrderId.replace(/[^0-9]/g, '') : '8921';
       a.download = `ACCEL-B2B-INVOICE-${invoiceSeq}.pdf`;
       document.body.appendChild(a);
       a.click();
@@ -75,7 +76,7 @@ const CustomerDashboardPage = () => {
       setTimeout(() => setDownloadSuccess(false), 3500);
     } catch (err) {
       console.error('Invoice download error:', err);
-      alert('Could not download invoice PDF. Please ensure your session is active.');
+      alert(`Could not download invoice PDF: ${err.message || 'Please ensure your session is active.'}`);
     } finally {
       setIsDownloading(false);
     }

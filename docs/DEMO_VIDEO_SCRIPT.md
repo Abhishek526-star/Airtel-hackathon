@@ -54,3 +54,4 @@
 - **Visual:** Navigate to Executive Analytics (`/admin`). Show the 5,000 leads cohort conversion and ARPU metrics.
 - **Voiceover:**
   > *"The impact for Accel Business? We slash activation time from 17 days to 24 hours, cut acquisition cost by 72%, and triple conversion from 7% to 22% — generating an additional ₹2.8 Crore in recurring revenue per cohort. Project Udyam Digital makes small businesses go digital in one sitting."*
+

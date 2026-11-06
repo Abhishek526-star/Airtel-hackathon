@@ -55,3 +55,4 @@ Project Udyam Digital treats MSME subscriber information with enterprise-grade d
    - Field sales partners only access leads geographically assigned within their specific telecom circle.
 3. **Planted Defect Resiliency & Fraud Mitigation:**
    - Automated detection of expired utility bills (>90 days from the benchmark date `2026-07-15`), cancelled GSTINs, and signatory name mismatches to prevent fraudulent subscriber provisioning.
+

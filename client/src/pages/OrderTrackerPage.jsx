@@ -44,14 +44,15 @@ const OrderTrackerPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to download invoice (status: ${response.status})`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server returned ${response.status}`);
       }
 
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = downloadUrl;
-      const cleanId = String(orderIdentifier).replace('ORD-', '');
+      const cleanId = String(orderIdentifier).replace(/[^0-9]/g, '');
       a.download = `ACCEL-B2B-INVOICE-${cleanId}.pdf`;
       document.body.appendChild(a);
       a.click();
@@ -62,7 +63,7 @@ const OrderTrackerPage = () => {
       setTimeout(() => setDownloadSuccess(false), 3500);
     } catch (err) {
       console.error('Invoice download failed:', err);
-      alert('Could not download GST Tax Invoice. Please ensure server is reachable.');
+      alert(`Could not download GST Tax Invoice: ${err.message || 'Please check network connection.'}`);
     } finally {
       setIsDownloading(false);
     }
