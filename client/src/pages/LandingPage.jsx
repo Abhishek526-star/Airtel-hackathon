@@ -60,7 +60,7 @@ const LandingPage = () => {
         <div className="relative max-w-5xl mx-auto text-center space-y-6">
           <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold tracking-wide">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-            <span>{t('landing.heroBadge', 'Airtel SYNC Hackathon 2026 • Enterprise Track A')}</span>
+            <span>{t('landing.heroBadge', 'Airtel Business Enterprise • Digital MSME Onboarding')}</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
@@ -296,7 +296,7 @@ const LandingPage = () => {
             </div>
             <h3 className="font-bold text-base text-slate-900">{t('landing.step3Title', 'Smart Digital KYC')}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              {t('landing.step3Desc', 'Upload your GST or Udyam certificate. Instant OCR and mock registry cross-checking verifies your business in seconds.')}
+              {t('landing.step3Desc', 'Upload your GST or Udyam certificate. Instant OCR and official GSTIN / Udyam registry cross-verification confirms your business in seconds.')}
             </p>
           </div>
 

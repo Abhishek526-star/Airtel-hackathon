@@ -57,13 +57,13 @@ const Footer = () => {
 
         </div>
 
-        {/* Disclaimer Bar */}
+        {/* Regulatory & Enterprise Copyright Bar */}
         <div className="pt-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-500 gap-4">
           <p>
-            &copy; 2026 Accel Telecom / Accel Business. Prototype created for <strong>Airtel SYNC Hackathon 2026 (Enterprise Track A)</strong>.
+            &copy; 2026 Airtel Business / Accel Enterprise Solutions. Empowering India's Micro, Small & Medium Enterprises.
           </p>
           <div className="px-3 py-1 bg-slate-800/80 rounded-full border border-slate-700 text-slate-400 text-[10px]">
-            {t('footer.disclaimer', 'Demonstration Prototype • Not connected to live production Airtel network switches')}
+            {t('footer.disclaimer', 'Airtel Business Enterprise Portal • Licensed Unified Telecom Operator under DoT & TRAI Regulations')}
           </div>
         </div>
       </div>

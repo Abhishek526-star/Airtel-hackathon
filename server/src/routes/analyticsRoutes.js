@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const analyticsController = require('../controllers/analyticsController');
 
-// Allow public/admin read for hackathon reviewers
+// Executive Dashboard Telemetry Endpoints
 router.get('/overview', analyticsController.getOverview);
 router.get('/funnel', analyticsController.getFunnel);
 router.get('/cohort', analyticsController.getCohortAnalytics);

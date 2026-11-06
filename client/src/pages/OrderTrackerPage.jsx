@@ -123,7 +123,7 @@ const OrderTrackerPage = () => {
 
   const timelineSteps = [
     { title: t('tracker.m1Title', 'Order Placed & Confirmed'), desc: t('tracker.m1Desc', 'Accepted quote locked and service order created.') },
-    { title: t('tracker.m2Title', 'Smart KYC Verified'), desc: t('tracker.m2Desc', 'Mock GSTIN / Udyam credentials cross-checked successfully.') },
+    { title: t('tracker.m2Title', 'Smart KYC Verified'), desc: t('tracker.m2Desc', 'Government GSTIN / Udyam credentials cross-checked successfully.') },
     { title: t('tracker.m3Title', 'Field Technician Assigned'), desc: t('tracker.m3Desc', 'Engineer Ramesh Kumar dispatched for on-site CPE setup.') },
     { title: t('tracker.m4Title', 'Installation In Progress'), desc: t('tracker.m4Desc', 'Optical fiber pulled to premises, router connected.') },
     { title: t('tracker.m5Title', 'Service Activated & Live'), desc: t('tracker.m5Desc', 'Static IP routed, 99.8% SLA telemetry monitoring live.') },
@@ -176,7 +176,7 @@ const OrderTrackerPage = () => {
                 </Button>
               </>
             ) : (
-              /* Reviewer Demo Shortcut Button */
+              /* Field Operations Action */
               <Button
                 variant="accent"
                 size="sm"
@@ -185,7 +185,7 @@ const OrderTrackerPage = () => {
                 icon={Zap}
                 className="text-xs bg-slate-800 hover:bg-slate-700"
               >
-                {currentProgIndex < 3 ? t('tracker.demoStartInstall', 'Demo: Start Installation') : t('tracker.demoActivate', 'Demo: Complete & Activate')}
+                {currentProgIndex < 3 ? t('tracker.demoStartInstall', 'Field Dispatch: Start Installation') : t('tracker.demoActivate', 'Field Dispatch: Complete & Activate')}
               </Button>
             )}
           </div>

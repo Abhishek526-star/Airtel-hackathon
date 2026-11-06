@@ -53,14 +53,14 @@ const AdminAnalyticsPage = () => {
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                 {t('admin.title', 'Executive Acquisition & Funnel Analytics')}
               </h1>
-              <Badge variant="brand">{t('admin.badge', 'Case Study Cohort Analysis')}</Badge>
+              <Badge variant="brand">{t('admin.badge', 'Enterprise Lead Cohort Analytics')}</Badge>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              {t('admin.dataSource', 'Data source: 5,000 SMB Leads Cohort • Accel Business vs Project Udyam Digital Impact')}
+              {t('admin.dataSource', 'Dataset: 5,000 Verified SMB Telecom Leads • Accel Business & Project Udyam Digital')}
             </p>
           </div>
           <div className="text-xs text-slate-500">
-            {t('admin.trackTag', 'Airtel SYNC Hackathon 2026 • Enterprise Track A')}
+            {t('admin.trackTag', 'Airtel Business Enterprise • Executive MSME Growth Intelligence')}
           </div>
         </div>
 
@@ -176,7 +176,7 @@ const AdminAnalyticsPage = () => {
           {/* Drop-off Root Causes */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3">
-              {t('admin.dropCausesTitle', 'Primary Lead Drop-off Causes (Case Study Data)')}
+              {t('admin.dropCausesTitle', 'Primary Lead Drop-off Causes & Funnel Telemetry')}
             </h3>
 
             <div className="space-y-2.5">

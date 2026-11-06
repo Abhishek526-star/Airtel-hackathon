@@ -56,10 +56,10 @@ const LoginPage = () => {
           A
         </div>
         <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-          {t('auth.signInTitle', 'Sign in to Accel Business')}
+          {t('auth.signInTitle', 'Sign in to Airtel Business')}
         </h2>
         <p className="text-xs text-slate-500">
-          {t('auth.subTitleLogin', 'Project Udyam Digital • Airtel SYNC Hackathon 2026')}
+          {t('auth.subTitleLogin', 'Project Udyam Digital • Enterprise B2B Solutions')}
         </p>
       </div>
 
@@ -72,10 +72,10 @@ const LoginPage = () => {
             </div>
           )}
 
-          {/* Quick Demo Evaluation Pills */}
+          {/* Quick Persona Access Pills */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center">
-              {t('auth.evaluatorLoginTitle', 'One-Click Hackathon Evaluator Login')}
+              {t('auth.evaluatorLoginTitle', 'Quick Enterprise Role Access')}
             </div>
             <div className="grid grid-cols-3 gap-1.5">
               <button
@@ -83,7 +83,7 @@ const LoginPage = () => {
                 onClick={() => handleQuickDemo('customer')}
                 className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:border-airtel-500 text-[11px] font-bold text-slate-800 transition-all text-center"
               >
-                {t('auth.evaluatorCustomer', 'Kirana Owner')}
+                {t('auth.evaluatorCustomer', 'Business Owner')}
               </button>
               <button
                 type="button"

@@ -101,15 +101,15 @@ const Navbar = () => {
             {/* Language Selector Dropdown */}
             <LanguageSelector />
 
-            {/* Quick Demo Persona Switcher */}
+            {/* Quick Enterprise Persona Switcher */}
             <div className="relative">
               <button
                 onClick={() => setPersonaDropdownOpen(!personaDropdownOpen)}
                 className="flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-colors"
-                title="Switch demo persona for quick hackathon evaluation"
+                title="Switch active enterprise profile"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>{t('common.demoRole', 'Demo Role')}: <strong className="capitalize">{user ? user.role : t('common.guest', 'Guest')}</strong></span>
+                <span>{t('common.demoRole', 'Profile')}: <strong className="capitalize">{user ? user.role : t('common.guest', 'Guest')}</strong></span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
               </button>
 

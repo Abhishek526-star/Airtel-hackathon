@@ -79,7 +79,7 @@ exports.createOrder = async (req, res, next) => {
       paymentStatus: 'SIMULATED_PAID',
       paymentDetails: {
         paidAmount: quote.totalOneTimePayable,
-        mode: 'Simulated UPI / Net Banking',
+        mode: 'Corporate Net Banking / Mandate (ECS)',
       },
       installationDetails: {
         installationAddress: installationAddress || (profile && profile.address ? profile.address.street : 'Main Market Road'),

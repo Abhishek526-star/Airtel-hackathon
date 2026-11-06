@@ -334,7 +334,7 @@ const CustomerDashboardPage = () => {
                   <span className="font-bold text-slate-400 text-[10px] uppercase">Supplier</span>
                   <div className="font-bold text-slate-900 mt-0.5">Accel Telecom Limited (B2B Division)</div>
                   <div className="text-[11px] text-slate-500">GSTIN: 07AAACA0123M1Z2 (Delhi Circle)</div>
-                  <div className="text-[11px] text-slate-500">Airtel SYNC Technology Park, Gurgaon</div>
+                  <div className="text-[11px] text-slate-500">Airtel Center, Plot No. 16, Udyog Vihar, Phase IV, Gurugram - 122015</div>
                 </div>
                 <div>
                   <span className="font-bold text-slate-400 text-[10px] uppercase">Billed To</span>

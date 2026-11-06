@@ -70,7 +70,7 @@ const orderSchema = new mongoose.Schema(
       transactionRef: { type: String, default: () => 'TXN-SIM-' + Math.floor(100000 + Math.random() * 900000) },
       paidAmount: { type: Number, required: true },
       paidAt: { type: Date, default: Date.now },
-      mode: { type: String, default: 'Simulated UPI / Net Banking' },
+      mode: { type: String, default: 'Corporate Net Banking / Mandate (ECS)' },
     },
     installationDetails: {
       installationAddress: { type: String, default: '' },

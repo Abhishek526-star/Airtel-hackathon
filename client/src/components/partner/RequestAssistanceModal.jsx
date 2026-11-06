@@ -274,3 +274,4 @@ const RequestAssistanceModal = ({ isOpen, onClose, defaultType = 'KYC_ASSISTANCE
 };
 
 export default RequestAssistanceModal;
+

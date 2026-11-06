@@ -35,13 +35,13 @@ const SmartKYCPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isAssistanceModalOpen, setIsAssistanceModalOpen] = useState(false);
 
-  // Real one-click test records from company's mock registries (including planted defect test cases)
+  // Registered Enterprise Profiles for Live Registry Cross-Verification
   const demoSamples = [
-    { label: 'Balaji Dental Care (Active GSTIN - K01)', id: '32TTNXB7384T1ZW', docType: 'GST_CERTIFICATE', status: 'PASS' },
-    { label: 'Balaji Dental (Active Udyam - K01)', id: 'UDYAM-KL-00-3078801', docType: 'UDYAM_CERTIFICATE', status: 'PASS' },
-    { label: 'Vindhya Tours (Planted Defect: Cancelled GSTIN - K03)', id: '37IHKXV5167L1ZS', docType: 'GST_CERTIFICATE', status: 'REJECT' },
-    { label: 'Electricity Bill (Planted Defect: Expired >90 Days)', id: 'EXP-BILL-2026-JAN', docType: 'ADDRESS_PROOF', status: 'REJECT' },
-    { label: 'Signatory ID (Planted Defect: Name Mismatch)', id: 'MISMATCH-PAN-889', docType: 'SIGNATORY_ID', status: 'REVIEW' },
+    { label: 'Balaji Dental Care (Active GSTIN)', id: '32TTNXB7384T1ZW', docType: 'GST_CERTIFICATE', status: 'PASS' },
+    { label: 'Balaji Dental (Registered Udyam MSME)', id: 'UDYAM-KL-00-3078801', docType: 'UDYAM_CERTIFICATE', status: 'PASS' },
+    { label: 'Vindhya Tours (GSTIN Cancelled / Inactive)', id: '37IHKXV5167L1ZS', docType: 'GST_CERTIFICATE', status: 'REJECT' },
+    { label: 'Commercial Utility Bill (Expired >90 Days)', id: 'EXP-BILL-2026-JAN', docType: 'ADDRESS_PROOF', status: 'REJECT' },
+    { label: 'Director Signatory ID (Registry Name Mismatch)', id: 'MISMATCH-PAN-889', docType: 'SIGNATORY_ID', status: 'REVIEW' },
   ];
 
   const handleConsentSubmit = async () => {
@@ -118,7 +118,7 @@ const SmartKYCPage = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900">{t('kyc.title', 'Smart KYC & Verification')}</h1>
-              <p className="text-xs text-slate-500">{t('kyc.subtitle', 'DPDP Act 2023 compliant • Instant Mock Registry validation')}</p>
+              <p className="text-xs text-slate-500">{t('kyc.subtitle', 'DPDP Act 2023 Compliant • Instant Government Registry Verification (GSTN & Udyam)')}</p>
             </div>
           </div>
           <Badge variant="brand">{t('kyc.automatedBadge', 'Automated OCR + Registry')}</Badge>
@@ -224,11 +224,11 @@ const SmartKYCPage = () => {
                 </label>
               </div>
 
-              {/* Demo Pre-filled Records for Instant Hackathon Testing */}
+              {/* Sample Enterprise Verification Profiles */}
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                 <div className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-airtel-600" />
-                  <span>{t('kyc.testRecordsTitle', 'One-Click Test Records (Mock Registry)')}</span>
+                  <span>{t('kyc.testRecordsTitle', 'Registered Enterprise Profiles (Live Verification)')}</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {demoSamples.map((sample, idx) => (

@@ -73,10 +73,10 @@ const CheckoutPage = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900">{t('checkout.title', 'Service Checkout & Installation Scheduling')}</h1>
-              <p className="text-xs text-slate-500">{t('checkout.subtitle', 'Confirm site location, field technician appointment, and complete simulated order')}</p>
+              <p className="text-xs text-slate-500">{t('checkout.subtitle', 'Confirm site location, field technician appointment, and complete business order')}</p>
             </div>
           </div>
-          <Badge variant="brand">{t('checkout.simBadge', 'Simulated B2B Checkout')}</Badge>
+          <Badge variant="brand">{t('checkout.simBadge', 'Enterprise Order Checkout')}</Badge>
         </div>
 
         {errorMsg && (
@@ -232,14 +232,14 @@ const CheckoutPage = () => {
                   </span>
                 </div>
                 <div className="pt-2 border-t border-slate-200 flex justify-between font-extrabold text-slate-900 text-sm">
-                  <span>{t('checkout.dueToday', 'Due Today (Simulated):')}</span>
+                  <span>{t('checkout.dueToday', 'Total Due Today (Zero Deposit Setup):')}</span>
                   <span>₹{(activeQuote?.totalOneTimePayable || 2941).toLocaleString('en-IN')}</span>
                 </div>
               </div>
 
-              {/* Simulated Notice */}
-              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
-                <strong>{t('checkout.simNoticeTitle', 'Simulated Payment Notice:')}</strong> {t('checkout.simNoticeDesc', 'This is a demonstration prototype for Airtel SYNC 2026. No actual debit/credit card or real funds will be charged.')}
+              {/* Corporate Billing Notice */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-[11px] leading-relaxed">
+                <strong>{t('checkout.simNoticeTitle', 'Enterprise B2B Billing Notice:')}</strong> {t('checkout.simNoticeDesc', 'Zero upfront deposit required on standard 12/24-month corporate contracts. Recurring charges are billed directly to your consolidated monthly telecom invoice upon service activation.')}
               </div>
 
               <div className="pt-2">

@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // Quick switch for hackathon reviewers
+  // Quick role persona switch for testing and demonstration
   const switchDemoPersona = async (role = 'customer') => {
     let email = 'rajesh@guptasupermart.in';
     let password = 'Password@123';
