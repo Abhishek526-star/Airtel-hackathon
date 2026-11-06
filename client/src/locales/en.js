@@ -22,6 +22,7 @@ export default {
     myBusiness: 'My Business',
     partnerPortal: 'Partner Portal',
     adminAnalytics: 'Executive Analytics',
+    profile: 'My Profile',
     quickSwitchPersona: 'Quick Switch Persona',
     kiranaOwner: 'Rajesh Gupta (Micro Retail)',
     kiranaOwnerDesc: 'Owner, Gupta Supermart (Kirana)',

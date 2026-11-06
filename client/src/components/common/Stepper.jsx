@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, Sparkles, FileText, ShieldCheck, ShoppingCart, Activity } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
 
-const Stepper = ({ currentStep = 1, onStepClick }) => {
+const Stepper = ({ currentStep = 1, isKycCompleted = false, onStepClick }) => {
   const { t } = useTranslation();
 
   const steps = [
@@ -17,7 +17,8 @@ const Stepper = ({ currentStep = 1, onStepClick }) => {
     <div className="w-full bg-white border-b border-slate-200 py-3 px-4 shadow-sm">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
         {steps.map((s, idx) => {
-          const isCompleted = currentStep > s.number;
+          const isKycStepDone = s.number === 3 && isKycCompleted;
+          const isCompleted = currentStep > s.number || (isKycStepDone && currentStep < 3);
           const isCurrent = currentStep === s.number;
           const Icon = s.icon;
 
@@ -29,23 +30,23 @@ const Stepper = ({ currentStep = 1, onStepClick }) => {
               >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
-                    isCompleted
-                      ? 'bg-emerald-600 text-white shadow-sm'
+                    isCompleted || isKycStepDone
+                      ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-100'
                       : isCurrent
                       ? 'bg-airtel-600 text-white ring-4 ring-red-100 shadow-md shadow-red-500/20'
                       : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'
                   }`}
                 >
-                  {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : <Icon className="w-4 h-4" />}
+                  {isCompleted || isKycStepDone ? <Check className="w-4 h-4 stroke-[3]" /> : <Icon className="w-4 h-4" />}
                 </div>
                 <div className="hidden sm:block text-left">
                   <div className={`text-[10px] font-bold uppercase tracking-wider ${
-                    isCurrent ? 'text-airtel-700' : isCompleted ? 'text-emerald-700' : 'text-slate-400'
+                    isKycStepDone ? 'text-emerald-700' : isCurrent ? 'text-airtel-700' : isCompleted ? 'text-emerald-700' : 'text-slate-400'
                   }`}>
                     Step {s.number}
                   </div>
                   <div className={`text-xs font-semibold ${
-                    isCurrent ? 'text-slate-900 font-bold' : isCompleted ? 'text-slate-700' : 'text-slate-400'
+                    isKycStepDone ? 'text-emerald-900 font-bold' : isCurrent ? 'text-slate-900 font-bold' : isCompleted ? 'text-slate-700' : 'text-slate-400'
                   }`}>
                     {s.label}
                   </div>

@@ -20,6 +20,7 @@ import PartnerDashboardPage from './pages/PartnerDashboardPage';
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -60,6 +61,16 @@ const AppContent = () => {
           <Route path="/orders/:id" element={<OrderTrackerPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+
+          {/* Dedicated Profile Route for Customers & Partners */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute allowedRoles={['customer', 'partner', 'admin']}>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Role-Specific Dashboards */}
           <Route

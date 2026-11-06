@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '../context/OnboardingContext';
 import { useAuth } from '../context/AuthContext';
@@ -14,10 +14,15 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   XCircle, 
-  ArrowRight,
-  Sparkles,
-  Lock,
-  RefreshCw
+  ArrowRight, 
+  Sparkles, 
+  Lock, 
+  RefreshCw,
+  Building2,
+  FileCheck2,
+  LayoutDashboard,
+  Calendar,
+  Check
 } from 'lucide-react';
 
 const SmartKYCPage = () => {
@@ -35,6 +40,11 @@ const SmartKYCPage = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isAssistanceModalOpen, setIsAssistanceModalOpen] = useState(false);
 
+  // Status check for existing verified KYC
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+  const [existingKyc, setExistingKyc] = useState(null);
+  const [showReverifyForm, setShowReverifyForm] = useState(false);
+
   // Registered Enterprise Profiles for Live Registry Cross-Verification
   const demoSamples = [
     { label: 'Balaji Dental Care (Active GSTIN)', id: '32TTNXB7384T1ZW', docType: 'GST_CERTIFICATE', status: 'PASS' },
@@ -43,6 +53,45 @@ const SmartKYCPage = () => {
     { label: 'Commercial Utility Bill (Expired >90 Days)', id: 'EXP-BILL-2026-JAN', docType: 'ADDRESS_PROOF', status: 'REJECT' },
     { label: 'Director Signatory ID (Registry Name Mismatch)', id: 'MISMATCH-PAN-889', docType: 'SIGNATORY_ID', status: 'REVIEW' },
   ];
+
+  // Check if current user already has completed KYC
+  useEffect(() => {
+    let isMounted = true;
+    const fetchKYCStatus = async () => {
+      try {
+        setIsLoadingStatus(true);
+        const res = await api.get('/kyc/status');
+        if (isMounted && res.success && res.data) {
+          if (
+            res.data.overallStatus === 'VERIFIED' ||
+            res.data.hasGstin ||
+            res.data.hasUdyam ||
+            user?.businessProfile?.kycStatus === 'VERIFIED' ||
+            user?.businessProfile?.hasGstin ||
+            user?.businessProfile?.hasUdyam
+          ) {
+            setExistingKyc(res.data);
+            setConsentChecked(true);
+            setKycData({
+              consentGiven: true,
+              verificationStatus: 'VERIFIED',
+              extractedId: res.data.kycVerifiedIdentifier || res.data.gstin || res.data.udyamNumber || '',
+              notes: 'Verified via Regulatory Registry',
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('[SmartKYCPage] Status check error:', err);
+      } finally {
+        if (isMounted) setIsLoadingStatus(false);
+      }
+    };
+
+    fetchKYCStatus();
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const handleConsentSubmit = async () => {
     try {
@@ -91,6 +140,16 @@ const SmartKYCPage = () => {
           extractedId: res.data.extractedId,
           notes: res.message,
         });
+
+        if (res.data.verificationStatus === 'VERIFIED') {
+          setExistingKyc((prev) => ({
+            ...prev,
+            overallStatus: 'VERIFIED',
+            kycVerifiedIdentifier: res.data.extractedId,
+            kycDocumentType: res.data.documentType,
+            kycVerifiedAt: new Date().toISOString(),
+          }));
+        }
       }
     } catch (err) {
       setErrorMsg(err.message || 'KYC verification failed.');
@@ -104,16 +163,26 @@ const SmartKYCPage = () => {
     navigate('/checkout');
   };
 
+  const isKycCompleted = Boolean(
+    existingKyc?.overallStatus === 'VERIFIED' ||
+    uploadResult?.verificationStatus === 'VERIFIED' ||
+    user?.businessProfile?.hasGstin ||
+    user?.businessProfile?.hasUdyam ||
+    user?.businessProfile?.kycStatus === 'VERIFIED'
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Stepper currentStep={3} />
+      <Stepper currentStep={3} isKycCompleted={isKycCompleted} />
 
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
         
-        {/* Page Title */}
+        {/* Page Title & Status Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-red-100 text-airtel-700 flex items-center justify-center">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+              isKycCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-airtel-700'
+            }`}>
               <ShieldCheck className="w-4 h-4" />
             </div>
             <div>
@@ -121,7 +190,9 @@ const SmartKYCPage = () => {
               <p className="text-xs text-slate-500">{t('kyc.subtitle', 'DPDP Act 2023 Compliant • Instant Government Registry Verification (GSTN & Udyam)')}</p>
             </div>
           </div>
-          <Badge variant="brand">{t('kyc.automatedBadge', 'Automated OCR + Registry')}</Badge>
+          <Badge variant={isKycCompleted ? 'success' : 'brand'}>
+            {isKycCompleted ? 'KYC Completed & Verified' : t('kyc.automatedBadge', 'Automated OCR + Registry')}
+          </Badge>
         </div>
 
         {errorMsg && (
@@ -130,8 +201,146 @@ const SmartKYCPage = () => {
           </div>
         )}
 
-        {/* Step A: DPDP Act 2023 Digital Consent Card */}
-        {!consentChecked ? (
+        {/* Loading state indicator */}
+        {isLoadingStatus ? (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center space-y-3">
+            <div className="w-8 h-8 border-2 border-airtel-600 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs text-slate-500">Checking enterprise verification status with regulatory registry...</p>
+          </div>
+        ) : isKycCompleted && !showReverifyForm ? (
+          /* ========================================================= */
+          /* PERSISTENT KYC COMPLETED & VERIFIED HERO DISPLAY          */
+          /* ========================================================= */
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm overflow-hidden">
+              {/* Header Banner */}
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-8 text-white">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
+                      <Check className="w-8 h-8 text-white stroke-[3]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-100 border border-emerald-300/30">
+                          Regulatory Verified
+                        </span>
+                        <span className="text-xs text-emerald-100">DPDP Act 2023 Compliant</span>
+                      </div>
+                      <h2 className="text-2xl font-black tracking-tight text-white mt-1">
+                        Smart KYC Completed & Verified
+                      </h2>
+                      <p className="text-xs text-emerald-50 mt-0.5">
+                        Your enterprise credentials have been verified and authenticated against official government registries.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Verified Details Grid */}
+              <div className="p-6 sm:p-8 space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  
+                  {/* Entity Legal Name */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                    <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Enterprise / Trade Name</span>
+                    </div>
+                    <div className="font-bold text-sm text-slate-900">
+                      {existingKyc?.tradeName || user?.businessProfile?.tradeName || 'Gupta Supermart'}
+                    </div>
+                    <div className="text-xs text-slate-500 truncate">
+                      Legal: {existingKyc?.legalName || user?.businessProfile?.legalName || user?.fullName || 'Gupta Enterprises Pvt Ltd'}
+                    </div>
+                  </div>
+
+                  {/* Verified Identifier */}
+                  <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-1">
+                    <div className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider flex items-center space-x-1.5">
+                      <FileCheck2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Verified Registry Identifier</span>
+                    </div>
+                    <div className="font-mono font-extrabold text-sm text-emerald-950">
+                      {existingKyc?.kycVerifiedIdentifier || existingKyc?.gstin || existingKyc?.udyamNumber || user?.businessProfile?.gstin || user?.businessProfile?.udyamNumber || '32TTNXB7384T1ZW'}
+                    </div>
+                    <div className="text-xs text-emerald-700 font-semibold">
+                      {existingKyc?.hasGstin || existingKyc?.gstin || user?.businessProfile?.gstin
+                        ? 'GSTIN Active Taxpayer (GSTN)'
+                        : 'Udyam Registered MSME (MSME Registry)'}
+                    </div>
+                  </div>
+
+                  {/* Compliance & Timestamp */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                    <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Verification Audit</span>
+                    </div>
+                    <div className="font-bold text-xs text-slate-800">
+                      Instant Automated OCR Match
+                    </div>
+                    <div className="text-[11px] text-slate-500 flex items-center space-x-1">
+                      <Lock className="w-3 h-3 text-emerald-600" />
+                      <span>Consent cryptographically sealed</span>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* DPDP Act 2023 Security Guarantee Notice */}
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start space-x-3 text-xs text-slate-600">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-slate-900">DPDP Act 2023 Certified Verification</div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Your identity and enterprise records are authenticated directly with statutory authorities. No additional documentation is required. You can proceed directly to choose your installation schedule and checkout.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action CTA Buttons */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowReverifyForm(true)}
+                    icon={RefreshCw}
+                    className="text-xs text-slate-600 hover:text-slate-900"
+                  >
+                    Upload Additional Document / Re-verify
+                  </Button>
+
+                  <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      onClick={() => navigate('/dashboard')}
+                      icon={LayoutDashboard}
+                      className="text-xs"
+                    >
+                      Business Dashboard
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      onClick={handleProceedToCheckout}
+                      icon={ArrowRight}
+                      className="text-xs px-6"
+                    >
+                      Proceed to Installation & Checkout
+                    </Button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        ) : !consentChecked ? (
+          /* ========================================================= */
+          /* Step A: DPDP Act 2023 Digital Consent Card                */
+          /* ========================================================= */
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-5">
             <div className="flex items-center space-x-3 text-slate-900">
               <Lock className="w-6 h-6 text-airtel-600 flex-shrink-0" />
@@ -165,9 +374,27 @@ const SmartKYCPage = () => {
             </div>
           </div>
         ) : (
-          /* Step B: Document Upload & Verification Zone */
+          /* ========================================================= */
+          /* Step B: Document Upload & Verification Zone               */
+          /* ========================================================= */
           <div className="space-y-6">
             
+            {/* If user was already verified but clicked to re-verify */}
+            {isKycCompleted && (
+              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-xs text-emerald-800">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>Your account already has verified KYC. Any new document submitted will append to your verification record.</span>
+                </div>
+                <button
+                  onClick={() => setShowReverifyForm(false)}
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-900 underline ml-2 whitespace-nowrap"
+                >
+                  Return to Verified Summary
+                </button>
+              </div>
+            )}
+
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
               
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">

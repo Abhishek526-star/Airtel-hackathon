@@ -77,6 +77,24 @@ const businessProfileSchema = new mongoose.Schema(
       uppercase: true,
       default: '',
     },
+    kycStatus: {
+      type: String,
+      enum: ['NOT_STARTED', 'PENDING', 'VERIFIED', 'NEEDS_REVIEW', 'REJECTED'],
+      default: 'NOT_STARTED',
+      index: true,
+    },
+    kycVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    kycDocumentType: {
+      type: String,
+      default: '',
+    },
+    kycVerifiedIdentifier: {
+      type: String,
+      default: '',
+    },
     currentIsp: {
       type: String,
       default: 'Local Cable Broadband / Mobile Hotspot',

@@ -271,7 +271,95 @@ async function runTests() {
       throw new Error('Request resolution lifecycle update failed');
     }
 
-    console.log('\n>>> ALL 13 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    console.log('\n--- TEST 14: Persistent KYC Completion State Detection ---');
+    const custAuth = await request('/api/auth/login', 'POST', {
+      identifier: 'rajesh@guptasupermart.in',
+      password: 'Password@123',
+    });
+    const customerToken = custAuth.data.data?.token;
+
+    const kycStatusRes = await request('/api/kyc/status', 'GET', null, customerToken);
+    console.log('KYC Status HTTP:', kycStatusRes.status);
+    console.log('Overall KYC Status:', kycStatusRes.data.data?.overallStatus);
+    console.log('Verified GSTIN:', kycStatusRes.data.data?.gstin || kycStatusRes.data.data?.kycVerifiedIdentifier);
+    if (
+      kycStatusRes.status !== 200 ||
+      kycStatusRes.data.data?.overallStatus !== 'VERIFIED' ||
+      !kycStatusRes.data.data?.hasGstin
+    ) {
+      throw new Error('KYC completion persistence verification failed');
+    }
+
+    console.log('\n--- TEST 15: Customer & Channel Partner Profile Endpoints Lifecycle ---');
+    // 15a: Customer Profile Fetch
+    const custProfile = await request('/api/profile', 'GET', null, customerToken);
+    console.log('Customer Profile HTTP:', custProfile.status);
+    console.log('User Role:', custProfile.data.data?.user?.role);
+    console.log('Business Trade Name:', custProfile.data.data?.businessProfile?.tradeName || custProfile.data.data?.tradeName);
+    console.log('KYC Completed:', custProfile.data.data?.kyc?.isCompleted);
+    if (
+      custProfile.status !== 200 ||
+      custProfile.data.data?.user?.role !== 'customer' ||
+      !custProfile.data.data?.kyc?.isCompleted
+    ) {
+      throw new Error('Customer profile retrieval failed');
+    }
+
+    // 15b: Customer Profile Update
+    const custUpdate = await request(
+      '/api/profile',
+      'PUT',
+      {
+        tradeName: 'Gupta Mega Retail & Supermart',
+        employees: 12,
+        address: { city: 'Delhi NCR', cityTier: 'Tier 1' },
+      },
+      customerToken
+    );
+    console.log('Customer Profile Update HTTP:', custUpdate.status);
+    console.log('Updated Trade Name:', custUpdate.data.data?.businessProfile?.tradeName || custUpdate.data.data?.tradeName);
+    console.log('Updated Employees:', custUpdate.data.data?.businessProfile?.employees || custUpdate.data.data?.employees);
+    if (
+      custUpdate.status !== 200 ||
+      (custUpdate.data.data?.businessProfile?.tradeName || custUpdate.data.data?.tradeName) !== 'Gupta Mega Retail & Supermart'
+    ) {
+      throw new Error('Customer profile update failed');
+    }
+
+    // 15c: Channel Partner Profile Fetch
+    const partnerProfile = await request('/api/profile', 'GET', null, partnerToken);
+    console.log('Partner Profile HTTP:', partnerProfile.status);
+    console.log('Partner Code:', partnerProfile.data.data?.user?.partnerCode);
+    console.log('Partner Territory Circle:', partnerProfile.data.data?.user?.territoryCircle);
+    console.log('Partner Availability:', partnerProfile.data.data?.user?.availabilityStatus);
+    if (
+      partnerProfile.status !== 200 ||
+      partnerProfile.data.data?.user?.role !== 'partner' ||
+      !partnerProfile.data.data?.user?.partnerCode
+    ) {
+      throw new Error('Partner profile retrieval failed');
+    }
+
+    // 15d: Channel Partner Profile Update
+    const partnerUpdate = await request(
+      '/api/profile',
+      'PUT',
+      {
+        agencyName: 'Delhi Tech Telecom Hub',
+        phone: '9810199999',
+      },
+      partnerToken
+    );
+    console.log('Partner Profile Update HTTP:', partnerUpdate.status);
+    console.log('Updated Agency Name:', partnerUpdate.data.data?.user?.agencyName);
+    if (
+      partnerUpdate.status !== 200 ||
+      partnerUpdate.data.data?.user?.agencyName !== 'Delhi Tech Telecom Hub'
+    ) {
+      throw new Error('Partner profile update failed');
+    }
+
+    console.log('\n>>> ALL 15 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {

@@ -14,7 +14,8 @@ import {
   LogIn, 
   Menu, 
   X,
-  ShoppingBag
+  ShoppingBag,
+  User
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -38,6 +39,7 @@ const Navbar = () => {
     } else if (user?.role === 'admin') {
       navLinks.push({ label: t('navbar.adminAnalytics', 'Executive Analytics'), path: '/admin', icon: BarChart3 });
     }
+    navLinks.push({ label: t('navbar.profile', 'Profile'), path: '/profile', icon: User });
   }
 
   return (
@@ -91,18 +93,27 @@ const Navbar = () => {
             {/* Auth Actions */}
             {isAuthenticated ? (
               <div className="flex items-center space-x-3 pl-2 border-l border-slate-200">
-                <div className="flex flex-col text-right">
-                  <span className="text-xs font-bold text-slate-800 leading-tight">
-                    {user?.fullName || 'User'}
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-                    {user?.role === 'customer'
-                      ? 'MSME Customer'
-                      : user?.role === 'partner'
-                      ? 'Sales Partner'
-                      : 'Executive Admin'}
-                  </span>
-                </div>
+                <Link
+                  to="/profile"
+                  className="flex items-center space-x-2.5 p-1.5 rounded-xl hover:bg-slate-100 transition-colors group text-right"
+                  title="View & Edit Profile"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-red-50 text-airtel-700 border border-red-200 flex items-center justify-center font-bold text-xs group-hover:scale-105 transition-transform">
+                    {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-slate-800 leading-tight group-hover:text-airtel-700 transition-colors">
+                      {user?.fullName || 'User'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                      {user?.role === 'customer'
+                        ? 'MSME Customer'
+                        : user?.role === 'partner'
+                        ? 'Sales Partner'
+                        : 'Executive Admin'}
+                    </span>
+                  </div>
+                </Link>
                 <button
                   onClick={logout}
                   className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-all"
@@ -167,20 +178,32 @@ const Navbar = () => {
 
           <div className="pt-3 border-t border-slate-100">
             {isAuthenticated ? (
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200">
-                <div>
-                  <div className="text-xs font-bold text-slate-900">{user?.fullName}</div>
-                  <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-                    {user?.role === 'customer'
-                      ? 'MSME Customer'
-                      : user?.role === 'partner'
-                      ? 'Sales Partner'
-                      : 'Executive Admin'}
+              <div className="space-y-2">
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-red-100 text-airtel-700 flex items-center justify-center font-bold text-xs">
+                      {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">{user?.fullName}</div>
+                      <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                        {user?.role === 'customer'
+                          ? 'MSME Customer'
+                          : user?.role === 'partner'
+                          ? 'Sales Partner'
+                          : 'Executive Admin'}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                  <span className="text-xs font-semibold text-airtel-700">View Profile &rarr;</span>
+                </Link>
                 <button
                   onClick={() => { logout(); setMobileMenuOpen(false); }}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-red-600 font-bold text-xs hover:bg-red-50"
+                  className="w-full py-2 rounded-xl bg-white border border-slate-200 text-red-600 font-bold text-xs hover:bg-red-50"
                 >
                   {t('common.signOut', 'Sign Out')}
                 </button>

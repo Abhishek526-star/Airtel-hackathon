@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import api from '../services/api';
@@ -13,7 +14,8 @@ import {
   X,
   CheckCircle2,
   ExternalLink,
-  UserCheck
+  UserCheck,
+  User
 } from 'lucide-react';
 import RequestAssistanceModal from '../components/partner/RequestAssistanceModal';
 
@@ -130,17 +132,33 @@ const CustomerDashboardPage = () => {
             <p className="text-xs text-slate-500">
               Legal Entity: <strong>{profile?.legalName || user?.fullName || 'Gupta Enterprises Pvt Ltd'}</strong> &bull; {activeOrder?.installationDetails?.city || profile?.address?.city || 'Delhi NCR'}, {activeOrder?.installationDetails?.pincode || '110001'}
             </p>
-            <div className="flex items-center space-x-3 pt-1 text-xs text-slate-600">
-              <span className="flex items-center space-x-1 text-emerald-700 font-semibold">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>GSTIN: {profile?.gstin || (profile?.hasGstin ? 'Verified' : 'Unregistered MSME')}</span>
-              </span>
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-600">
+              <Link
+                to="/profile"
+                className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors shadow-xs"
+                title="View Verified KYC and Regulatory Details in Profile"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>KYC: Completed & Verified</span>
+              </Link>
+              <span>&bull;</span>
+              <span>GSTIN: {profile?.gstin || (profile?.hasGstin ? 'Verified' : 'Unregistered MSME')}</span>
               <span>&bull;</span>
               <span>Udyam: {profile?.udyamNumber || (profile?.hasUdyam ? 'Verified' : 'N/A')}</span>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <Link to="/profile">
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={User}
+                className="text-xs"
+              >
+                My Profile
+              </Button>
+            </Link>
             <Button
               variant="secondary"
               size="sm"

@@ -86,14 +86,25 @@ exports.uploadDocument = async (req, res, next) => {
     });
 
     // Update profile with verified GSTIN/Udyam if verified
-    if (verification.verificationStatus === 'VERIFIED' && profile) {
-      if (activeDocType === 'GST_CERTIFICATE') {
-        profile.hasGstin = true;
-        profile.gstin = activeId;
-        profile.legalName = verification.registryValidation?.matchedRecord?.legalName || profile.legalName;
-      } else if (activeDocType === 'UDYAM_CERTIFICATE') {
-        profile.hasUdyam = true;
-        profile.udyamNumber = activeId;
+    if (profile) {
+      if (verification.verificationStatus === 'VERIFIED') {
+        profile.kycStatus = 'VERIFIED';
+        profile.kycVerifiedAt = new Date();
+        profile.kycDocumentType = activeDocType;
+        profile.kycVerifiedIdentifier = activeId;
+
+        if (activeDocType === 'GST_CERTIFICATE') {
+          profile.hasGstin = true;
+          profile.gstin = activeId;
+          profile.legalName = verification.registryValidation?.matchedRecord?.legalName || profile.legalName;
+        } else if (activeDocType === 'UDYAM_CERTIFICATE') {
+          profile.hasUdyam = true;
+          profile.udyamNumber = activeId;
+        }
+      } else if (verification.verificationStatus === 'NEEDS_REVIEW' && profile.kycStatus !== 'VERIFIED') {
+        profile.kycStatus = 'NEEDS_REVIEW';
+      } else if (verification.verificationStatus === 'REJECTED' && profile.kycStatus !== 'VERIFIED') {
+        profile.kycStatus = 'REJECTED';
       }
       await profile.save();
     }
@@ -144,9 +155,25 @@ exports.getStatus = async (req, res, next) => {
     const profile = await BusinessProfile.findOne({ user: req.user._id });
 
     let overallStatus = 'NOT_STARTED';
-    if (documents.length > 0) {
+
+    if (profile?.kycStatus === 'VERIFIED' || profile?.hasGstin || profile?.hasUdyam) {
+      overallStatus = 'VERIFIED';
+      if (profile && profile.kycStatus !== 'VERIFIED') {
+        profile.kycStatus = 'VERIFIED';
+        if (!profile.kycVerifiedAt) profile.kycVerifiedAt = new Date();
+        if (!profile.kycVerifiedIdentifier) {
+          profile.kycVerifiedIdentifier = profile.gstin || profile.udyamNumber || '';
+        }
+        await profile.save();
+      }
+    } else if (documents.length > 0) {
       if (documents.some((d) => d.verificationStatus === 'VERIFIED')) {
         overallStatus = 'VERIFIED';
+        if (profile && profile.kycStatus !== 'VERIFIED') {
+          profile.kycStatus = 'VERIFIED';
+          profile.kycVerifiedAt = documents.find((d) => d.verificationStatus === 'VERIFIED').createdAt;
+          await profile.save();
+        }
       } else if (documents.some((d) => d.verificationStatus === 'NEEDS_REVIEW')) {
         overallStatus = 'NEEDS_REVIEW';
       } else if (documents.some((d) => d.verificationStatus === 'REJECTED')) {
@@ -156,15 +183,27 @@ exports.getStatus = async (req, res, next) => {
       }
     }
 
+    const verifiedDoc = documents.find((d) => d.verificationStatus === 'VERIFIED');
+    const kycVerifiedAt = profile?.kycVerifiedAt || verifiedDoc?.createdAt || null;
+    const kycDocumentType = profile?.kycDocumentType || verifiedDoc?.documentType || (profile?.hasGstin ? 'GST_CERTIFICATE' : (profile?.hasUdyam ? 'UDYAM_CERTIFICATE' : ''));
+    const kycVerifiedIdentifier = profile?.kycVerifiedIdentifier || profile?.gstin || profile?.udyamNumber || verifiedDoc?.ocrExtractedData?.extractedId || '';
+
     res.status(200).json({
       success: true,
       message: 'KYC status retrieved.',
       data: {
         overallStatus,
+        kycStatus: overallStatus,
+        kycVerifiedAt,
+        kycDocumentType,
+        kycVerifiedIdentifier,
         hasGstin: profile ? profile.hasGstin : false,
         gstin: profile ? profile.gstin : '',
         hasUdyam: profile ? profile.hasUdyam : false,
         udyamNumber: profile ? profile.udyamNumber : '',
+        legalName: profile?.legalName || '',
+        tradeName: profile?.tradeName || '',
+        businessProfile: profile,
         documents,
       },
       error: null,
