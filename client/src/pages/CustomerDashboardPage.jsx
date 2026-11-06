@@ -84,6 +84,32 @@ const CustomerDashboardPage = () => {
 
   const profile = user?.businessProfile;
   const activeOrder = orders.length > 0 ? orders[0] : null;
+  const activeQuote = activeOrder?.quote;
+
+  // Real ordered items from quote or fallback defaults
+  const activeItems = activeQuote?.items && activeQuote.items.length > 0
+    ? activeQuote.items
+    : [
+        { productName: 'Accel Fiber Business 200M', category: 'Connectivity', speedBandwidth: '200 Mbps', unitMonthlyPrice: 1999, quantity: 1 },
+        { productName: 'POS Digital Gateway M2M SIM', category: 'Mobility', speedBandwidth: 'Unlimited CUG', unitMonthlyPrice: 299, quantity: 1 },
+        { productName: 'WhatsApp Business API Starter', category: 'Digital', speedBandwidth: '1,000 sessions/mo', unitMonthlyPrice: 153, quantity: 1 },
+      ];
+
+  // Synchronized Financial Calculations (Matching Invoice, Checkout & DB)
+  const monthlyRecurringCharge = activeQuote?.totalMonthlyAmount || 2351;
+  const setupFee = activeQuote?.totalSetupFee || 0;
+  const setupGst = activeQuote?.gstSetup || 0;
+
+  const invoiceTaxable = (activeQuote?.discountedMrc || activeQuote?.baseMrc || 1992) + setupFee;
+  const invoiceGst = (activeQuote?.gstMrc || 358.56) + setupGst;
+  const invoiceCgst = parseFloat((invoiceGst / 2).toFixed(2));
+  const invoiceSgst = parseFloat((invoiceGst / 2).toFixed(2));
+  const invoiceTotalPaid = activeOrder?.paymentDetails?.paidAmount || activeQuote?.totalOneTimePayable || (invoiceTaxable + invoiceGst);
+
+  const cleanOrderSeq = activeOrder?.orderId ? activeOrder.orderId.replace(/[^0-9]/g, '') : '8921';
+  const invoiceNumber = `ACCEL/2026/B2B-INV-${cleanOrderSeq}`;
+  const circuitId = activeOrder?.serviceActivation?.circuitId || 'ACCEL-FIBER-NCR-8912';
+  const staticIp = activeOrder?.serviceActivation?.assignedStaticIp || '103.24.188.42';
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -94,20 +120,20 @@ const CustomerDashboardPage = () => {
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                {profile?.tradeName || 'Gupta Supermart'}
+                {profile?.tradeName || activeOrder?.installationDetails?.contactPerson || 'Gupta Supermart'}
               </h1>
-              <Badge variant="brand">{profile?.segment || 'Micro Retail'}</Badge>
+              <Badge variant="brand">{profile?.segment || 'Enterprise Client'}</Badge>
             </div>
             <p className="text-xs text-slate-500">
-              Legal Entity: <strong>{profile?.legalName || 'Gupta Enterprises Pvt Ltd'}</strong> &bull; {profile?.address?.city || 'Noida'}, {profile?.address?.state || 'UP'}
+              Legal Entity: <strong>{profile?.legalName || user?.fullName || 'Gupta Enterprises Pvt Ltd'}</strong> &bull; {activeOrder?.installationDetails?.city || profile?.address?.city || 'Delhi NCR'}, {activeOrder?.installationDetails?.pincode || '110001'}
             </p>
             <div className="flex items-center space-x-3 pt-1 text-xs text-slate-600">
               <span className="flex items-center space-x-1 text-emerald-700 font-semibold">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>GSTIN: {profile?.gstin || '07AAAAA0000A1Z5'} (Verified)</span>
+                <span>GSTIN: {profile?.gstin || (profile?.hasGstin ? 'Verified' : 'Unregistered MSME')}</span>
               </span>
               <span>&bull;</span>
-              <span>Udyam: {profile?.udyamNumber || 'UDYAM-UP-28-0012345'}</span>
+              <span>Udyam: {profile?.udyamNumber || (profile?.hasUdyam ? 'Verified' : 'N/A')}</span>
             </div>
           </div>
 
@@ -138,26 +164,26 @@ const CustomerDashboardPage = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
             <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">{t('dashboard.broadbandSla', 'Broadband SLA')}</div>
-            <div className="text-2xl font-extrabold text-emerald-600">99.8%</div>
-            <div className="text-[11px] text-slate-500">{t('dashboard.enterpriseActive', 'Enterprise Circuit Active')}</div>
+            <div className="text-2xl font-extrabold text-emerald-600">{activeOrder?.serviceActivation?.slaUptimePercent || 99.8}%</div>
+            <div className="text-[11px] text-slate-500">{circuitId}</div>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
             <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">{t('dashboard.monthlyRecurring', 'Monthly Recurring')}</div>
-            <div className="text-2xl font-extrabold text-slate-900">₹2,351</div>
+            <div className="text-2xl font-extrabold text-slate-900">₹{monthlyRecurringCharge.toLocaleString('en-IN')}</div>
             <div className="text-[11px] text-slate-500">{t('dashboard.gstCredit', 'Includes 18% GST Credit')}</div>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
             <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">{t('dashboard.staticIpTitle', 'Static IPv4')}</div>
-            <div className="text-xl font-bold font-mono text-slate-800">103.24.188.42</div>
+            <div className="text-xl font-bold font-mono text-slate-800">{staticIp}</div>
             <div className="text-[11px] text-slate-500">{t('dashboard.cctvServer', 'CCTV & Billing Server')}</div>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
             <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">{t('dashboard.activeServicesCount', 'Active Services')}</div>
-            <div className="text-2xl font-extrabold text-airtel-700">4 Lines</div>
-            <div className="text-[11px] text-slate-500">{t('dashboard.linesSummary', 'Broadband + SIM + WhatsApp')}</div>
+            <div className="text-2xl font-extrabold text-airtel-700">{activeItems.length} Services</div>
+            <div className="text-[11px] text-slate-500">{activeQuote?.bundleName || 'Curated MSME Pack'}</div>
           </div>
         </div>
 
@@ -179,46 +205,22 @@ const CustomerDashboardPage = () => {
               </div>
 
               <div className="space-y-3">
-                
-                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-red-100 text-airtel-700 flex items-center justify-center font-bold text-xs">
-                      200M
+                {activeItems.map((item, idx) => (
+                  <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-xl bg-red-100 text-airtel-700 flex items-center justify-center font-bold text-xs uppercase">
+                        {(item.category || 'TEL').slice(0, 3)}
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs sm:text-sm text-slate-900">{item.productName}</div>
+                        <div className="text-[11px] text-slate-500">
+                          {item.speedBandwidth || item.category} &bull; Qty: {item.quantity || 1} &bull; ₹{(item.unitMonthlyPrice || item.rate || 0).toLocaleString('en-IN')}/mo
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-bold text-xs sm:text-sm text-slate-900">Accel Fiber Business 200M</div>
-                      <div className="text-[11px] text-slate-500">Circuit ID: ACCEL-FIBER-NCR-8912 &bull; Unlimited Data</div>
-                    </div>
+                    <Badge variant="success">Active</Badge>
                   </div>
-                  <Badge variant="success">Active</Badge>
-                </div>
-
-                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs">
-                      POS
-                    </div>
-                    <div>
-                      <div className="font-bold text-xs sm:text-sm text-slate-900">POS Digital Gateway M2M SIM</div>
-                      <div className="text-[11px] text-slate-500">ICCID: 8991040291028301 &bull; Active in EDC Terminal</div>
-                    </div>
-                  </div>
-                  <Badge variant="success">Active</Badge>
-                </div>
-
-                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                      WA
-                    </div>
-                    <div>
-                      <div className="font-bold text-xs sm:text-sm text-slate-900">WhatsApp Business API Starter</div>
-                      <div className="text-[11px] text-slate-500">1,000 monthly automated receipts & promotions</div>
-                    </div>
-                  </div>
-                  <Badge variant="success">Active</Badge>
-                </div>
-
+                ))}
               </div>
             </div>
           </div>
@@ -228,33 +230,36 @@ const CustomerDashboardPage = () => {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
               <h3 className="font-bold text-sm text-slate-900 border-b border-slate-100 pb-3 flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-airtel-600" />
-                <span>{t('dashboard.gstInvoiceTitle', 'Monthly GST B2B Statement')}</span>
+                <span>{t('dashboard.gstInvoiceTitle', 'Official B2B Tax Statement')}</span>
               </h3>
 
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2 font-mono">
                 <div className="flex justify-between text-slate-500">
                   <span>Invoice No:</span>
-                  <span className="font-bold text-slate-800">ACCEL-INV-2026-8921</span>
+                  <span className="font-bold text-slate-800">{invoiceNumber}</span>
                 </div>
                 <div className="flex justify-between text-slate-500">
-                  <span>Billing Cycle:</span>
+                  <span>Billing Period:</span>
                   <span>01 Nov 2026 – 30 Nov 2026</span>
                 </div>
                 <div className="flex justify-between text-slate-500">
                   <span>Net Taxable Value:</span>
-                  <span>₹1,992.00</span>
+                  <span>₹{invoiceTaxable.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-slate-500">
                   <span>CGST (9%):</span>
-                  <span>₹179.28</span>
+                  <span>₹{invoiceCgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-slate-500">
                   <span>SGST (9%):</span>
-                  <span>₹179.28</span>
+                  <span>₹{invoiceSgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="pt-2 border-t border-slate-300 flex justify-between font-bold text-slate-900 text-xs">
                   <span>Total Amount Paid:</span>
-                  <span>₹2,350.56</span>
+                  <span className="text-airtel-700 font-extrabold">₹{invoiceTotalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-sans pt-1">
+                  Monthly recurring from M2: ₹{monthlyRecurringCharge.toLocaleString('en-IN')}/mo
                 </div>
               </div>
 
@@ -286,7 +291,7 @@ const CustomerDashboardPage = () => {
 
       </div>
 
-      {/* Invoice On-Screen Preview & Print Modal */}
+      {/* Invoice On-Screen Preview & Print Modal (Phase 3: Synchronized Figures) */}
       {isPreviewOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
@@ -298,7 +303,7 @@ const CustomerDashboardPage = () => {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base text-slate-900">Accel Telecom B2B Tax Invoice</h3>
-                  <p className="text-[11px] text-slate-500">Invoice No: ACCEL/2026/B2B-INV-8921</p>
+                  <p className="text-[11px] text-slate-500">Invoice No: {invoiceNumber}</p>
                 </div>
               </div>
               <button
@@ -315,15 +320,15 @@ const CustomerDashboardPage = () => {
               <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-200">
                 <div>
                   <span className="font-bold text-slate-400 text-[10px] uppercase">Supplier</span>
-                  <div className="font-bold text-slate-900 mt-0.5">Accel Telecom Limited</div>
+                  <div className="font-bold text-slate-900 mt-0.5">Accel Telecom Limited (B2B Division)</div>
                   <div className="text-[11px] text-slate-500">GSTIN: 07AAACA0123M1Z2 (Delhi Circle)</div>
                   <div className="text-[11px] text-slate-500">Airtel SYNC Technology Park, Gurgaon</div>
                 </div>
                 <div>
                   <span className="font-bold text-slate-400 text-[10px] uppercase">Billed To</span>
-                  <div className="font-bold text-slate-900 mt-0.5">{profile?.tradeName || 'Gupta Supermart'}</div>
-                  <div className="text-[11px] text-slate-500">GSTIN: {profile?.gstin || '07AAAAA0000A1Z5'}</div>
-                  <div className="text-[11px] text-slate-500">Udyam: {profile?.udyamNumber || 'UDYAM-UP-28-0012345'}</div>
+                  <div className="font-bold text-slate-900 mt-0.5">{profile?.tradeName || activeOrder?.installationDetails?.contactPerson || 'Gupta Supermart'}</div>
+                  <div className="text-[11px] text-slate-500">GSTIN: {profile?.gstin || (profile?.hasGstin ? 'Verified' : 'Unregistered MSME')}</div>
+                  <div className="text-[11px] text-slate-500">Udyam: {profile?.udyamNumber || (profile?.hasUdyam ? 'Verified' : 'N/A')}</div>
                 </div>
               </div>
 
@@ -340,21 +345,20 @@ const CustomerDashboardPage = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      <tr>
-                        <td className="p-2.5 font-medium">Accel Biz Fibre 200M Broadband</td>
-                        <td className="p-2.5 font-mono text-slate-500">998412</td>
-                        <td className="p-2.5 text-right font-bold">₹1,899.00</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-medium">POS Digital Gateway M2M Corporate SIM</td>
-                        <td className="p-2.5 font-mono text-slate-500">998413</td>
-                        <td className="p-2.5 text-right font-bold">₹299.00</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-medium">WhatsApp Business API Starter</td>
-                        <td className="p-2.5 font-mono text-slate-500">998422</td>
-                        <td className="p-2.5 text-right font-bold">₹153.00</td>
-                      </tr>
+                      {activeItems.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className="p-2.5 font-medium">{item.productName} ({item.category || 'Monthly'})</td>
+                          <td className="p-2.5 font-mono text-slate-500">{(item.category || '').toLowerCase().includes('voice') ? '998413' : '998412'}</td>
+                          <td className="p-2.5 text-right font-bold">₹{((item.unitMonthlyPrice || item.rate || 0) * (item.quantity || 1)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                      ))}
+                      {setupFee > 0 && (
+                        <tr>
+                          <td className="p-2.5 font-medium text-slate-800">One-Time Optical Fiber Installation & ONT Setup</td>
+                          <td className="p-2.5 font-mono text-slate-500">998419</td>
+                          <td className="p-2.5 text-right font-bold text-slate-800">₹{setupFee.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -363,20 +367,20 @@ const CustomerDashboardPage = () => {
               {/* Tax totals */}
               <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1.5 font-mono">
                 <div className="flex justify-between text-slate-600">
-                  <span>Total Taxable Value:</span>
-                  <span>₹2,351.00</span>
+                  <span>Total Combined Taxable Value:</span>
+                  <span>₹{invoiceTaxable.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-slate-500">
                   <span>CGST (9.0%):</span>
-                  <span>₹211.59</span>
+                  <span>₹{invoiceCgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-slate-500">
                   <span>SGST (9.0%):</span>
-                  <span>₹211.59</span>
+                  <span>₹{invoiceSgst.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="pt-2 border-t border-slate-200 flex justify-between font-extrabold text-sm text-slate-900">
-                  <span>Grand Total Payable:</span>
-                  <span className="text-red-600">₹2,774.18</span>
+                  <span>Grand Total Paid:</span>
+                  <span className="text-red-600">₹{invoiceTotalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
 

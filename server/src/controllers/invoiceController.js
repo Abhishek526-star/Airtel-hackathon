@@ -110,7 +110,7 @@ exports.downloadInvoice = async (req, res, next) => {
         const discount = Math.min(lineTotal, discountPerItem);
 
         return {
-          desc: `${i.productName} (${i.speedBandwidth || i.category || 'Connectivity'})`,
+          desc: `${i.productName} (${i.speedBandwidth || i.category || 'Monthly Service'})`,
           sac,
           qty,
           rate: unitRate,
@@ -119,11 +119,31 @@ exports.downloadInvoice = async (req, res, next) => {
         };
       });
 
-      taxableValue = quoteSource.discountedMrc || quoteSource.baseMrc || 1992.00;
-      const gstVal = quoteSource.gstMrc || (taxableValue * 0.18);
-      cgstAmount = parseFloat((gstVal / 2).toFixed(2));
-      sgstAmount = parseFloat((gstVal / 2).toFixed(2));
-      totalAmount = quoteSource.totalMonthlyAmount || parseFloat((taxableValue + gstVal).toFixed(2));
+      // Reconcile One-Time Installation / Setup Fee if present
+      if (quoteSource.totalSetupFee && quoteSource.totalSetupFee > 0) {
+        items.push({
+          desc: 'One-Time Optical Fiber Installation, ONT Router Provisioning & On-Site Setup',
+          sac: '998419',
+          qty: 1,
+          rate: quoteSource.totalSetupFee,
+          discount: 0,
+          taxable: quoteSource.totalSetupFee,
+        });
+      }
+
+      const monthlyTaxable = quoteSource.discountedMrc || quoteSource.baseMrc || 0;
+      const setupTaxable = quoteSource.totalSetupFee || 0;
+      taxableValue = monthlyTaxable + setupTaxable;
+
+      const monthlyGst = quoteSource.gstMrc || (monthlyTaxable * 0.18);
+      const setupGst = quoteSource.gstSetup || (setupTaxable * 0.18);
+      const totalGst = monthlyGst + setupGst;
+
+      cgstAmount = parseFloat((totalGst / 2).toFixed(2));
+      sgstAmount = parseFloat((totalGst / 2).toFixed(2));
+
+      // Grand total matches order total payable / paid amount exactly
+      totalAmount = order?.paymentDetails?.paidAmount || quoteSource.totalOneTimePayable || (taxableValue + totalGst);
     } else {
       // Default standard MSME package
       items = [
@@ -207,20 +227,56 @@ exports.getInvoiceDetails = async (req, res, next) => {
     const { order, profile, quote } = await resolveInvoiceContext(orderId, req.user);
     const quoteSource = quote || order?.quoteSnapshot;
 
+    let items = [];
+    const monthlyTaxable = quoteSource?.discountedMrc || quoteSource?.baseMrc || 1992.00;
+    const setupTaxable = quoteSource?.totalSetupFee || 0;
+    const netTaxableValue = monthlyTaxable + setupTaxable;
+
+    const monthlyGst = quoteSource?.gstMrc || (monthlyTaxable * 0.18);
+    const setupGst = quoteSource?.gstSetup || (setupTaxable * 0.18);
+    const totalGst = monthlyGst + setupGst;
+
+    const totalAmountPaid = order?.paymentDetails?.paidAmount || quoteSource?.totalOneTimePayable || (netTaxableValue + totalGst);
+    const monthlyRecurringAmount = quoteSource?.totalMonthlyAmount || (monthlyTaxable + monthlyGst);
+
+    if (quoteSource && quoteSource.items) {
+      items = quoteSource.items.map((i) => ({
+        desc: `${i.productName} (${i.speedBandwidth || i.category || 'Monthly Service'})`,
+        sac: (i.category || '').toLowerCase().includes('voice') ? '998413' : '998412',
+        qty: i.quantity || 1,
+        rate: i.unitMonthlyPrice || 999,
+        taxable: (i.unitMonthlyPrice || 999) * (i.quantity || 1),
+      }));
+
+      if (setupTaxable > 0) {
+        items.push({
+          desc: 'One-Time Optical Fiber Installation, ONT Router Provisioning & On-Site Setup',
+          sac: '998419',
+          qty: 1,
+          rate: setupTaxable,
+          taxable: setupTaxable,
+        });
+      }
+    }
+
     res.status(200).json({
       success: true,
       data: {
         invoiceNumber: `ACCEL/2026/B2B-INV-${order?.orderId ? order.orderId.replace(/[^0-9]/g, '') : '8921'}`,
         billingPeriod: '01 Nov 2026 – 30 Nov 2026',
-        netTaxableValue: quoteSource?.discountedMrc || 1992.00,
-        cgst: (quoteSource?.gstMrc || 358.56) / 2,
-        sgst: (quoteSource?.gstMrc || 358.56) / 2,
-        totalAmountPaid: quoteSource?.totalMonthlyAmount || 2350.56,
+        items,
+        netTaxableValue,
+        cgst: parseFloat((totalGst / 2).toFixed(2)),
+        sgst: parseFloat((totalGst / 2).toFixed(2)),
+        totalGst: parseFloat(totalGst.toFixed(2)),
+        totalAmountPaid,
+        monthlyRecurringAmount,
         circuitId: order?.serviceActivation?.circuitId || 'ACCEL-NCR-9912',
         customer: {
           tradeName: profile.tradeName,
           legalName: profile.legalName,
           gstin: profile.gstin,
+          udyamNumber: profile.udyamNumber,
         },
       },
     });
