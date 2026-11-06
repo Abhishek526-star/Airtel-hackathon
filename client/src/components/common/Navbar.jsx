@@ -14,29 +14,14 @@ import {
   LogIn, 
   Menu, 
   X,
-  ChevronDown,
   ShoppingBag
 } from 'lucide-react';
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout, switchDemoPersona } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [personaDropdownOpen, setPersonaDropdownOpen] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
-
-  const handleSwitchPersona = async (role) => {
-    try {
-      await switchDemoPersona(role);
-      setPersonaDropdownOpen(false);
-      if (role === 'admin') navigate('/admin');
-      else if (role === 'partner') navigate('/partner');
-      else navigate('/dashboard');
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const navLinks = [
     { label: t('navbar.advisor', 'AI Advisor'), path: '/advisor', icon: Sparkles },
@@ -70,7 +55,9 @@ const Navbar = () => {
                 <span className="font-extrabold text-slate-900 tracking-tight text-lg">Project Udyam</span>
                 <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-airtel-700">DIGITAL</span>
               </div>
-              <p className="text-[10px] text-slate-500 font-medium tracking-wide">{t('common.brandTagline', 'Accel Business | Airtel SYNC 2026')}</p>
+              <p className="text-[10px] text-slate-500 font-medium tracking-wide">
+                {t('common.brandTagline', 'Airtel Business | Enterprise Digital Solutions')}
+              </p>
             </div>
           </Link>
 
@@ -101,70 +88,45 @@ const Navbar = () => {
             {/* Language Selector Dropdown */}
             <LanguageSelector />
 
-            {/* Quick Enterprise Persona Switcher */}
-            <div className="relative">
-              <button
-                onClick={() => setPersonaDropdownOpen(!personaDropdownOpen)}
-                className="flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-colors"
-                title="Switch active enterprise profile"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span>{t('common.demoRole', 'Profile')}: <strong className="capitalize">{user ? user.role : t('common.guest', 'Guest')}</strong></span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-              </button>
-
-              {personaDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
-                  <div className="px-3 py-1.5 border-b border-slate-100 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                    {t('navbar.quickSwitchPersona', 'Quick Switch Persona')}
-                  </div>
-                  <button
-                    onClick={() => handleSwitchPersona('customer')}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-red-50 hover:text-airtel-700 flex flex-col"
-                  >
-                    <span className="font-bold text-slate-800">{t('navbar.kiranaOwner', 'Rajesh Gupta (Micro Retail)')}</span>
-                    <span className="text-[11px] text-slate-500">{t('navbar.kiranaOwnerDesc', 'Owner, Gupta Supermart (Kirana)')}</span>
-                  </button>
-                  <button
-                    onClick={() => handleSwitchPersona('partner')}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-red-50 hover:text-airtel-700 flex flex-col"
-                  >
-                    <span className="font-bold text-slate-800">{t('navbar.salesPartner', 'Amit Verma (Channel Partner)')}</span>
-                    <span className="text-[11px] text-slate-500">{t('navbar.salesPartnerDesc', 'Airtel Assisted Sales & KYC')}</span>
-                  </button>
-                  <button
-                    onClick={() => handleSwitchPersona('admin')}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-red-50 hover:text-airtel-700 flex flex-col"
-                  >
-                    <span className="font-bold text-slate-800">{t('navbar.executiveAdmin', 'Priya Nair (Executive Admin)')}</span>
-                    <span className="text-[11px] text-slate-500">{t('navbar.executiveAdminDesc', 'SME Growth Head & Analytics')}</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Auth Button */}
+            {/* Auth Actions */}
             {isAuthenticated ? (
-              <div className="flex items-center space-x-2">
-                <span className="text-xs font-medium text-slate-700 truncate max-w-[120px]">
-                  {user?.fullName?.split(' ')[0]}
-                </span>
+              <div className="flex items-center space-x-3 pl-2 border-l border-slate-200">
+                <div className="flex flex-col text-right">
+                  <span className="text-xs font-bold text-slate-800 leading-tight">
+                    {user?.fullName || 'User'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                    {user?.role === 'customer'
+                      ? 'MSME Customer'
+                      : user?.role === 'partner'
+                      ? 'Sales Partner'
+                      : 'Executive Admin'}
+                  </span>
+                </div>
                 <button
                   onClick={logout}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-all"
                   title={t('common.signOut', 'Sign Out')}
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <Link
-                to="/login"
-                className="flex items-center space-x-1 px-4 py-2 rounded-lg text-xs font-semibold bg-airtel-600 text-white hover:bg-airtel-700 shadow-sm transition-all"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>{t('common.signIn', 'Sign In')}</span>
-              </Link>
+              <div className="flex items-center space-x-2">
+                <Link
+                  to="/login"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all"
+                >
+                  {t('common.signIn', 'Sign In')}
+                </Link>
+                <Link
+                  to="/register"
+                  className="flex items-center space-x-1 px-4 py-2 rounded-xl text-xs font-bold bg-airtel-600 text-white hover:bg-airtel-700 shadow-sm shadow-red-500/20 transition-all"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Register</span>
+                </Link>
+              </div>
             )}
           </div>
 
@@ -204,29 +166,43 @@ const Navbar = () => {
           </div>
 
           <div className="pt-3 border-t border-slate-100">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-              {t('navbar.quickSwitchPersona', 'Select Demo Persona')}
-            </div>
-            <div className="grid grid-cols-3 gap-1.5 text-center">
-              <button
-                onClick={() => { handleSwitchPersona('customer'); setMobileMenuOpen(false); }}
-                className="p-2 rounded bg-slate-100 text-[11px] font-semibold text-slate-700 hover:bg-red-100"
-              >
-                Kirana Owner
-              </button>
-              <button
-                onClick={() => { handleSwitchPersona('partner'); setMobileMenuOpen(false); }}
-                className="p-2 rounded bg-slate-100 text-[11px] font-semibold text-slate-700 hover:bg-red-100"
-              >
-                Partner
-              </button>
-              <button
-                onClick={() => { handleSwitchPersona('admin'); setMobileMenuOpen(false); }}
-                className="p-2 rounded bg-slate-100 text-[11px] font-semibold text-slate-700 hover:bg-red-100"
-              >
-                Admin
-              </button>
-            </div>
+            {isAuthenticated ? (
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                <div>
+                  <div className="text-xs font-bold text-slate-900">{user?.fullName}</div>
+                  <div className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                    {user?.role === 'customer'
+                      ? 'MSME Customer'
+                      : user?.role === 'partner'
+                      ? 'Sales Partner'
+                      : 'Executive Admin'}
+                  </div>
+                </div>
+                <button
+                  onClick={() => { logout(); setMobileMenuOpen(false); }}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-red-600 font-bold text-xs hover:bg-red-50"
+                >
+                  {t('common.signOut', 'Sign Out')}
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                >
+                  {t('common.signIn', 'Sign In')}
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2.5 rounded-xl bg-airtel-600 text-white text-xs font-bold shadow-sm"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

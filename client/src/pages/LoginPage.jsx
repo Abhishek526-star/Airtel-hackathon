@@ -8,11 +8,11 @@ import { LogIn } from 'lucide-react';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, switchDemoPersona } = useAuth();
+  const { login } = useAuth();
   const { t } = useTranslation();
 
-  const [identifier, setIdentifier] = useState('rajesh@guptasupermart.in');
-  const [password, setPassword] = useState('Password@123');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -23,27 +23,12 @@ const LoginPage = () => {
     try {
       setIsLoading(true);
       setErrorMsg('');
-      const loggedInUser = await login(identifier, password);
+      const loggedInUser = await login(identifier.trim(), password);
       if (loggedInUser.role === 'admin') navigate('/admin');
       else if (loggedInUser.role === 'partner') navigate('/partner');
       else navigate(redirectPath);
     } catch (err) {
-      setErrorMsg(err.message || 'Invalid credentials.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleQuickDemo = async (role) => {
-    try {
-      setIsLoading(true);
-      setErrorMsg('');
-      const loggedInUser = await switchDemoPersona(role);
-      if (role === 'admin') navigate('/admin');
-      else if (role === 'partner') navigate('/partner');
-      else navigate(redirectPath);
-    } catch (err) {
-      setErrorMsg(err.message || 'Quick demo sign-in failed.');
+      setErrorMsg(err.message || 'Invalid credentials. Please verify your email/phone and password.');
     } finally {
       setIsLoading(false);
     }
@@ -64,43 +49,13 @@ const LoginPage = () => {
       </div>
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <div className="bg-white py-8 px-6 shadow-sm border border-slate-200 rounded-3xl space-y-6">
+        <div className="bg-white py-8 px-6 sm:px-8 shadow-sm border border-slate-200 rounded-3xl space-y-5">
           
           {errorMsg && (
             <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
               {errorMsg}
             </div>
           )}
-
-          {/* Quick Persona Access Pills */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 text-center">
-              {t('auth.evaluatorLoginTitle', 'Quick Enterprise Role Access')}
-            </div>
-            <div className="grid grid-cols-3 gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('customer')}
-                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:border-airtel-500 text-[11px] font-bold text-slate-800 transition-all text-center"
-              >
-                {t('auth.evaluatorCustomer', 'Business Owner')}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('partner')}
-                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:border-airtel-500 text-[11px] font-bold text-slate-800 transition-all text-center"
-              >
-                {t('auth.evaluatorPartner', 'Sales Partner')}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickDemo('admin')}
-                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-red-50 hover:border-airtel-500 text-[11px] font-bold text-slate-800 transition-all text-center"
-              >
-                {t('auth.evaluatorAdmin', 'Executive Admin')}
-              </button>
-            </div>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -110,9 +65,10 @@ const LoginPage = () => {
               <input
                 type="text"
                 required
+                placeholder="e.g. rajesh@guptasupermart.in or 9810123456"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
 
@@ -123,9 +79,10 @@ const LoginPage = () => {
               <input
                 type="password"
                 required
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
 
@@ -135,13 +92,13 @@ const LoginPage = () => {
               size="lg"
               isLoading={isLoading}
               icon={LogIn}
-              className="w-full text-xs"
+              className="w-full text-xs shadow-md shadow-red-500/20"
             >
               {t('common.signIn', 'Sign In')}
             </Button>
           </form>
 
-          <div className="text-center text-xs text-slate-500 pt-2 border-t border-slate-100">
+          <div className="text-center text-xs text-slate-500 pt-3 border-t border-slate-100">
             {t('auth.dontHaveAccount', "Don't have an account?")}{' '}
             <Link to="/register" className="font-bold text-airtel-700 hover:underline">
               {t('auth.registerBusiness', 'Register Business')}
