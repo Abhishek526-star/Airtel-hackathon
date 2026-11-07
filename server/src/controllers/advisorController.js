@@ -109,11 +109,37 @@ const ADVISOR_QUESTIONS = [
   },
 ];
 
-// @desc    Get dynamic conversational question or next step
+// @desc    Dynamic Natural Conversational Advisor or Stepwise Questionnaire
 // @route   POST /api/advisor/chat
-// @access  Public
+// @access  Public / Optional Auth
 exports.chat = async (req, res, next) => {
   try {
+    // 1. Natural Language Conversational Interface
+    if (req.body.message !== undefined) {
+      const { message, history = [], currentBundle = null, language = 'en' } = req.body;
+      const result = await advisorService.converse({
+        message,
+        history,
+        currentBundle,
+        language,
+        userProfile: req.user
+          ? {
+              fullName: req.user.fullName,
+              tradeName: req.user.businessProfile?.tradeName,
+              segment: req.user.businessProfile?.segment,
+            }
+          : null,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Advisor consultation response generated.',
+        data: result,
+        error: null,
+      });
+    }
+
+    // 2. Legacy Stepwise Questionnaire Fallback
     const { currentStep = 0, answers = {}, language = 'en' } = req.body;
 
     // Check if questionnaire is complete

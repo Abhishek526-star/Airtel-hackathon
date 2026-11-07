@@ -1024,7 +1024,113 @@ async function runTests() {
       throw new Error('Lead recovery action recording failed');
     }
 
-    console.log('\n>>> ALL 28 ENTERPRISE SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    // ========================================================
+    // TEST 29: Natural Conversational AI Advisor Consultation with Dynamic Bundle Curation
+    // ========================================================
+    console.log('\n--- Running Test 29: Natural Conversational AI Advisor Consultation ---');
+
+    const naturalAdvisorRes = await request('/api/advisor/chat', 'POST', {
+      message: 'We run a busy retail grocery supermarket with 4 checkout counters. We face frequent Wi-Fi dropouts during peak UPI/QR code billing, and we want to send customer billing receipts on WhatsApp. Our budget is around ₹2,500/month.',
+      history: [],
+      language: 'en',
+    });
+
+    console.log('Natural Advisor Status:', naturalAdvisorRes.status);
+    console.log('Advisor Reply Snippet:', naturalAdvisorRes.data.data?.reply?.slice(0, 160));
+    console.log('Curated Bundle Name:', naturalAdvisorRes.data.data?.bundle?.bundleName);
+    console.log('Estimated MRC: ₹', naturalAdvisorRes.data.data?.bundle?.estimatedMonthlyPrice);
+    console.log('Flat Setup Fee: ₹', naturalAdvisorRes.data.data?.bundle?.oneTimeSetup);
+    console.log('Products:', (naturalAdvisorRes.data.data?.bundle?.recommendedProducts || []).map((p) => p.productId + ' (' + p.productName + ')').join(', '));
+    console.log('Suggested Quick Replies:', naturalAdvisorRes.data.data?.suggestedQuickReplies);
+
+    const curatedBundle = naturalAdvisorRes.data.data?.bundle;
+    if (
+      naturalAdvisorRes.status !== 200 ||
+      !naturalAdvisorRes.data.data?.reply ||
+      !curatedBundle ||
+      !curatedBundle.recommendedProducts?.length ||
+      curatedBundle.oneTimeSetup !== 1000 ||
+      !naturalAdvisorRes.data.data?.suggestedQuickReplies?.length
+    ) {
+      throw new Error('Natural conversational advisor consultation failed or returned invalid bundle data');
+    }
+
+    // Verify all products strictly belong to the official 25-product catalogue
+    for (const prod of curatedBundle.recommendedProducts) {
+      if (!prod.productId || !prod.productId.startsWith('P') || !prod.monthlyPrice) {
+        throw new Error(`Invalid or ungrounded product detected: ${JSON.stringify(prod)}`);
+      }
+    }
+
+    // ========================================================
+    // TEST 30: Contextual Follow-Up and Dynamic Bundle Modification
+    // ========================================================
+    console.log('\n--- Running Test 30: Contextual Follow-Up & Dynamic Bundle Modification ---');
+
+    const modifiedAdvisorRes = await request('/api/advisor/chat', 'POST', {
+      message: 'Can we make it more budget-friendly? Please adjust the bundle for a tighter budget.',
+      history: [
+        {
+          role: 'user',
+          content: 'We run a busy retail grocery supermarket with 4 checkout counters. We face frequent Wi-Fi dropouts during peak UPI/QR code billing, and we want to send customer billing receipts on WhatsApp. Our budget is around ₹2,500/month.',
+        },
+        {
+          role: 'assistant',
+          content: naturalAdvisorRes.data.data?.reply,
+        },
+      ],
+      currentBundle: curatedBundle,
+      language: 'en',
+    });
+
+    console.log('Modified Advisor Status:', modifiedAdvisorRes.status);
+    console.log('Modified Advisor Reply Snippet:', modifiedAdvisorRes.data.data?.reply?.slice(0, 160));
+    console.log('Adjusted Bundle Name:', modifiedAdvisorRes.data.data?.bundle?.bundleName);
+    console.log('Adjusted MRC: ₹', modifiedAdvisorRes.data.data?.bundle?.estimatedMonthlyPrice);
+    console.log('Adjusted Products:', (modifiedAdvisorRes.data.data?.bundle?.recommendedProducts || []).map((p) => p.productId + ' (' + p.productName + ')').join(', '));
+
+    const adjustedBundle = modifiedAdvisorRes.data.data?.bundle;
+    if (
+      modifiedAdvisorRes.status !== 200 ||
+      !adjustedBundle ||
+      !adjustedBundle.recommendedProducts?.length ||
+      adjustedBundle.oneTimeSetup !== 1000
+    ) {
+      throw new Error('Contextual follow-up bundle modification failed');
+    }
+
+    // ========================================================
+    // TEST 31: Profile-Aware Personalized Consultation (Logged-in Customer)
+    // ========================================================
+    console.log('\n--- Running Test 31: Profile-Aware Personalized Advisor Consultation ---');
+
+    const profileAdvisorRes = await request(
+      '/api/advisor/chat',
+      'POST',
+      {
+        message: 'We are expanding our bakery and need multi-counter POS billing and cloud surveillance CCTV cameras.',
+        history: [],
+        language: 'en',
+      },
+      customerToken
+    );
+
+    console.log('Profile-Aware Advisor Status:', profileAdvisorRes.status);
+    console.log('Profile-Aware Advisor Reply Snippet:', profileAdvisorRes.data.data?.reply?.slice(0, 160));
+    console.log('Profile-Aware Bundle Name:', profileAdvisorRes.data.data?.bundle?.bundleName);
+    console.log('Profile-Aware Products:', (profileAdvisorRes.data.data?.bundle?.recommendedProducts || []).map((p) => p.productId + ' (' + p.productName + ')').join(', '));
+
+    const profileBundle = profileAdvisorRes.data.data?.bundle;
+    if (
+      profileAdvisorRes.status !== 200 ||
+      !profileBundle ||
+      !profileBundle.recommendedProducts?.some((p) => p.productId === 'P23' || p.productId === 'P19') ||
+      profileBundle.oneTimeSetup !== 1000
+    ) {
+      throw new Error('Profile-aware advisor consultation failed or did not include required POS/CCTV services');
+    }
+
+    console.log('\n>>> ALL 31 ENTERPRISE SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {

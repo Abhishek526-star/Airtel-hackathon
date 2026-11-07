@@ -13,12 +13,23 @@ import {
   ArrowRight, 
   CheckCircle2, 
   Mic, 
-  MicOff, 
   Volume2, 
-  MessageSquare, 
-  Smartphone,
-  Check,
-  Send
+  Building2, 
+  Check, 
+  Send, 
+  Layers, 
+  Bot, 
+  Zap, 
+  RefreshCw, 
+  AlertCircle,
+  Store,
+  Briefcase,
+  Factory,
+  Network,
+  HelpCircle,
+  Clock,
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react';
 
 const AIAdvisorPage = () => {
@@ -27,38 +38,30 @@ const AIAdvisorPage = () => {
   const { setBundleFromAdvisor, setCurrentStep } = useOnboarding();
   const { t, language } = useTranslation();
 
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [answers, setAnswers] = useState({
-    segment: 'Micro Retail and Services',
-    employees: 3,
-    requiresPaymentPos: true,
-    requiresWhatsapp: true,
-    monthlyBudget: 2500,
-  });
-  const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [isEvaluating, setIsEvaluating] = useState(false);
-  const [recommendation, setRecommendation] = useState(null);
+  // Chat message stream: [{ id, sender: 'bot'|'user', text, bundle, alternatives, followUpQuestions, suggestedQuickReplies, time }]
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState('');
+  const [isConsulting, setIsConsulting] = useState(false);
+  const [currentBundle, setCurrentBundle] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
-  
-  // Stretch Goal #1: View Mode (Wizard vs. WhatsApp Bot) & Voice Assistant
-  const [viewMode, setViewMode] = useState('wizard'); // 'wizard' | 'whatsapp'
+
+  // Voice Assistant: Speech-to-Text & Text-to-Speech
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
   const chatBottomRef = useRef(null);
 
-  // Auto-scroll chat to bottom
+  // Auto-scroll chat to latest message
   useEffect(() => {
     if (chatBottomRef.current) {
       chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chatMessages, isEvaluating, recommendation]);
+  }, [messages, isConsulting]);
 
   // Voice Assistant: Text-to-Speech
-  const speakText = (text) => {
+  const speakText = (textToSpeak) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUtterance(textToSpeak.replace(/[*#_]/g, ''));
       utterance.lang = language === 'hi' ? 'hi-IN' : 'en-IN';
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
@@ -84,490 +87,520 @@ const AIAdvisorPage = () => {
     recognition.onerror = () => setIsListening(false);
 
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript.toLowerCase();
-      if (currentQuestion && currentQuestion.options) {
-        const matched = currentQuestion.options.find(opt => 
-          transcript.includes(String(opt.label).toLowerCase()) || 
-          transcript.includes(String(opt.value).toLowerCase())
-        );
-        if (matched) {
-          handleSelectOption(currentQuestion.id, matched.value, matched.label);
-        } else {
-          // If no exact match, select the first option matching partial intent
-          handleSelectOption(currentQuestion.id, currentQuestion.options[0].value, currentQuestion.options[0].label);
-        }
+      const transcript = event.results[0][0].transcript;
+      if (transcript && transcript.trim()) {
+        handleSendMessage(transcript.trim());
       }
     };
 
     recognition.start();
   };
 
-  // Fetch question whenever active language or step changes
-  useEffect(() => {
-    fetchNextQuestion(currentStepIndex, answers, true);
-  }, [language]);
+  // Quick Starter Prompts
+  const quickStarters = [
+    {
+      icon: Store,
+      title: 'Retail Store / Supermarket',
+      prompt: 'I run a busy grocery and retail store with 4 staff members. We face Wi-Fi dropouts during peak UPI/QR code billing, and we want to send customer billing receipts on WhatsApp. Our budget is around ₹2,500/month.',
+      tag: 'UPI & WhatsApp POS',
+    },
+    {
+      icon: Briefcase,
+      title: 'Professional Office / Clinic',
+      prompt: 'We are a 10-person professional consulting & legal office. We need 300 Mbps high-speed fiber for client video conferencing, corporate email for our team, and cloud telephony for our receptionist.',
+      tag: 'Video & Cloud Phone',
+    },
+    {
+      icon: Factory,
+      title: 'Manufacturing Workshop',
+      prompt: 'Small manufacturing workshop with 8 workers and delivery vans. We need reliable fiber broadband, Cloud CCTV surveillance for the shopfloor, and automated cloud backup for our Tally ERP archives.',
+      tag: 'CCTV & Tally Backup',
+    },
+    {
+      icon: Network,
+      title: 'Multi-Branch Connected Business',
+      prompt: 'We operate 3 retail branches in the city. We need seamless SD-WAN connectivity, dedicated static IP, and automatic 4G/5G failover backup so billing never stops during cable cuts.',
+      tag: 'SD-WAN & 4G Failover',
+    },
+  ];
 
-  const fetchNextQuestion = async (step, currentAnswers, isInitial = false) => {
+  // Send message to Conversational Advisor
+  const handleSendMessage = async (textToSend) => {
+    const msg = (textToSend || inputText).trim();
+    if (!msg || isConsulting) return;
+
+    setInputText('');
+    setErrorMsg('');
+
+    // Append user message
+    const userMsg = {
+      id: Date.now(),
+      sender: 'user',
+      text: msg,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    const newHistory = [...messages, userMsg];
+    setMessages(newHistory);
+    setIsConsulting(true);
+
     try {
-      setIsEvaluating(true);
-      setErrorMsg('');
+      // Prepare history payload for API
+      const historyPayload = newHistory.map((m) => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.text,
+      }));
+
       const res = await api.post('/advisor/chat', {
-        currentStep: step,
-        answers: currentAnswers,
+        message: msg,
+        history: historyPayload,
+        currentBundle,
         language,
       });
 
       if (res.success && res.data) {
-        if (res.data.isComplete) {
-          setRecommendation(res.data.recommendation);
-          setCurrentQuestion(null);
-          // Append final bot message in WhatsApp mode
-          setChatMessages(prev => [
-            ...prev,
-            {
-              id: Date.now(),
-              sender: 'bot',
-              text: `🎉 Great! I have curated the ideal telecom & digital bundle: "${res.data.recommendation.bundleName}" for ₹${res.data.recommendation.estimatedMonthlyPrice}/month.`,
-              isRecommendation: true,
-              data: res.data.recommendation,
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            }
-          ]);
-        } else {
-          setCurrentQuestion(res.data.question);
-          setCurrentStepIndex(res.data.stepIndex);
-          // Append question to WhatsApp chat history
-          setChatMessages(prev => [
-            ...prev,
-            {
-              id: Date.now(),
-              sender: 'bot',
-              text: res.data.question.text,
-              question: res.data.question,
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            }
-          ]);
+        const botData = res.data;
+        const botMsg = {
+          id: Date.now() + 1,
+          sender: 'bot',
+          text: botData.reply || 'Here is my recommendation based on your operational requirements.',
+          bundle: botData.bundle || null,
+          alternatives: botData.alternatives || [],
+          followUpQuestions: botData.followUpQuestions || [],
+          suggestedQuickReplies: botData.suggestedQuickReplies || [],
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+
+        if (botData.bundle) {
+          setCurrentBundle(botData.bundle);
         }
+
+        setMessages((prev) => [...prev, botMsg]);
       }
     } catch (err) {
       setErrorMsg(err.message || 'Error communicating with AI Advisor.');
     } finally {
-      setIsEvaluating(false);
+      setIsConsulting(false);
     }
   };
 
-  const handleSelectOption = (questionId, value, label = '') => {
-    const displayLabel = label || String(value);
-    // Append user selection message in WhatsApp mode
-    setChatMessages(prev => [
-      ...prev,
-      {
-        id: Date.now(),
-        sender: 'user',
-        text: displayLabel,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
-
-    const updatedAnswers = { ...answers, [questionId]: value };
-    setAnswers(updatedAnswers);
-    fetchNextQuestion(currentStepIndex + 1, updatedAnswers);
+  const handleSelectQuickReply = (chipText) => {
+    handleSendMessage(chipText);
   };
 
-  const handleRestart = () => {
-    setRecommendation(null);
-    setCurrentStepIndex(0);
-    setChatMessages([]);
-    fetchNextQuestion(0, {}, true);
+  const handleSelectAlternative = (altBundle) => {
+    setCurrentBundle(altBundle);
+    const switchMsg = {
+      id: Date.now(),
+      sender: 'user',
+      text: `Switched to alternative tier: ${altBundle.bundleName}`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    const confirmationMsg = {
+      id: Date.now() + 1,
+      sender: 'bot',
+      text: `Updated your primary bundle recommendation to **${altBundle.bundleName}** at ₹${altBundle.estimatedMonthlyPrice}/month. All services and discounts have been recalculated.`,
+      bundle: altBundle,
+      alternatives: [],
+      suggestedQuickReplies: ['Accept bundle & proceed to quote', 'Can we adjust anything else?'],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMessages((prev) => [...prev, switchMsg, confirmationMsg]);
   };
 
   const handleProceedToQuote = () => {
-    if (recommendation) {
-      setBundleFromAdvisor(recommendation);
+    if (currentBundle) {
+      setBundleFromAdvisor(currentBundle);
       setCurrentStep(2);
       navigate('/quote');
     }
   };
 
-  // Helper to get translated option label if available
-  const getOptionLabel = (qId, optionIdx, defaultLabel) => {
-    const key = `${qId === 'segment' ? 'q1' : qId === 'employees' ? 'q2' : qId === 'requiresPaymentPos' ? 'q3' : qId === 'requiresWhatsapp' ? 'q4' : 'q5'}_opt${optionIdx + 1}`;
-    return t(`advisor.${key}`, defaultLabel);
+  const handleRestart = () => {
+    setMessages([]);
+    setCurrentBundle(null);
+    setInputText('');
+    setErrorMsg('');
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Stepper currentStep={1} />
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 flex flex-col">
         
-        {/* Top Control Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-red-100 text-airtel-700 flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
+        {/* Top Header Card */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 sm:p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-md shadow-red-600/20">
+              <Bot className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-bold text-slate-900">{t('advisor.title', 'AI Business Telecom Advisor')}</h1>
-                <Badge variant="brand">GenAI Powered</Badge>
+                <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                  {t('advisor.title', 'AI Business Telecom Advisor')}
+                </h1>
+                <Badge variant="brand">GenAI Consultant</Badge>
               </div>
-              <p className="text-xs text-slate-500">{t('advisor.subtitle', 'Intelligent bundling matching your operational footprint')}</p>
+              <p className="text-xs text-slate-500">
+                Natural consultative analysis grounded strictly in the official 25-product telecom catalogue.
+              </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* View Mode Switcher: Web Guided vs WhatsApp Simulator (Stretch Goal #1) */}
-            <div className="bg-slate-200/80 p-1 rounded-xl flex items-center space-x-1 text-xs">
-              <button
-                type="button"
-                onClick={() => setViewMode('wizard')}
-                className={`px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 transition-all ${
-                  viewMode === 'wizard' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Web Guided</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('whatsapp')}
-                className={`px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 transition-all ${
-                  viewMode === 'whatsapp' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-emerald-700'
-                }`}
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>WhatsApp Bot</span>
-              </button>
-            </div>
-
             <button
+              type="button"
               onClick={handleRestart}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-slate-300 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 text-xs font-semibold"
-              title="Restart Advisor"
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-slate-300 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 text-xs font-bold transition-all shadow-2xs"
+              title="Restart Consultation"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>{t('advisor.adjustReq', 'Restart')}</span>
+              <span>Restart</span>
             </button>
           </div>
         </div>
 
         {errorMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
-            {errorMsg}
+          <div className="mb-4 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+            <span>{errorMsg}</span>
           </div>
         )}
 
-        {/* VIEW MODE 1: WEB GUIDED WIZARD */}
-        {viewMode === 'wizard' && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+        {/* Chat Conversation Container */}
+        <div className="flex-1 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col min-h-[550px] overflow-hidden">
+          
+          {/* Messages Body */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-50/50">
             
-            {/* Active Question Dialog Flow */}
-            {!recommendation && currentQuestion && (
-              <div className="space-y-6">
-                
-                <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-100 pb-3">
-                  <span className="font-semibold uppercase tracking-wider text-airtel-700">
-                    {t('advisor.questionProgress', 'Question {current} of {total}', { current: currentStepIndex + 1, total: 5 })}
+            {/* Initial Welcome Screen with Quick Starter Prompt Cards */}
+            {messages.length === 0 && (
+              <div className="space-y-6 py-4 animate-fadeIn">
+                <div className="max-w-2xl bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-3">
+                  <div className="flex items-center space-x-2 text-red-600">
+                    <Sparkles className="w-5 h-5" />
+                    <span className="font-extrabold text-xs uppercase tracking-wider">Consultative Intelligence</span>
+                  </div>
+                  <h2 className="text-lg font-extrabold text-slate-900">
+                    Welcome to Accel Telecom Solutions. How can I assist your business today?
+                  </h2>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Tell me about your business in your own words—your industry, team size, daily digital needs (like fast UPI checkout, automated customer WhatsApp bills, CCTV surveillance, or cloud accounting backup), and any budget limits. I will curate the ideal telecom bundle tailored to your operations.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 pl-1">
+                    Or choose a common business scenario to start:
                   </span>
-                  <div className="flex items-center space-x-3">
-                    {/* Voice Assistant Buttons */}
-                    <button
-                      type="button"
-                      onClick={() => speakText(currentQuestion.text)}
-                      className="inline-flex items-center space-x-1 text-slate-600 hover:text-airtel-600 text-xs font-semibold"
-                      title="Listen to question"
-                    >
-                      <Volume2 className="w-3.5 h-3.5 text-airtel-600" />
-                      <span>Listen</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={startVoiceInput}
-                      className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                        isListening
-                          ? 'bg-red-600 text-white animate-pulse'
-                          : 'bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-airtel-600'
-                      }`}
-                      title="Speak your answer"
-                    >
-                      <Mic className="w-3.5 h-3.5" />
-                      <span>{isListening ? 'Listening...' : 'Voice Input'}</span>
-                    </button>
-                    <span>{Math.round(((currentStepIndex + 1) / 5) * 100)}%</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {quickStarters.map((starter, idx) => {
+                      const Icon = starter.icon;
+                      return (
+                        <div
+                          key={idx}
+                          onClick={() => handleSendMessage(starter.prompt)}
+                          className="bg-white p-4 rounded-2xl border border-slate-200 hover:border-red-500 hover:shadow-md transition-all cursor-pointer group space-y-2 flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center space-x-2">
+                                <div className="p-1.5 rounded-lg bg-red-50 text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors">
+                                  <Icon className="w-4 h-4" />
+                                </div>
+                                <h3 className="font-bold text-xs text-slate-900 group-hover:text-red-600 transition-colors">
+                                  {starter.title}
+                                </h3>
+                              </div>
+                              <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                                {starter.tag}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                              "{starter.prompt}"
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-end text-[11px] font-bold text-red-600 group-hover:translate-x-1 transition-transform">
+                            <span>Start Consultation</span>
+                            <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                {/* Assistant Message Bubble */}
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-                    AI
-                  </div>
-                  <div className="bg-slate-100 rounded-2xl rounded-tl-none p-4 max-w-xl text-slate-800 text-sm font-medium leading-relaxed">
-                    {currentQuestion.text}
-                  </div>
-                </div>
-
-                {/* Clickable Option Pills */}
-                <div className="pt-2 pl-11 space-y-2.5 max-w-xl">
-                  {currentQuestion.options.map((option, idx) => (
-                    <button
-                      key={idx}
-                      disabled={isEvaluating}
-                      onClick={() => handleSelectOption(currentQuestion.id, option.value, option.label)}
-                      className="w-full text-left p-3.5 rounded-xl border border-slate-200 bg-white hover:border-airtel-500 hover:bg-red-50/40 text-slate-800 text-xs sm:text-sm font-semibold transition-all flex items-center justify-between group active:scale-[0.99]"
-                    >
-                      <span>{getOptionLabel(currentQuestion.id, idx, option.label)}</span>
-                      <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-airtel-600 transition-colors" />
-                    </button>
-                  ))}
-                </div>
-
-                {isEvaluating && (
-                  <div className="pl-11 flex items-center space-x-2 text-xs text-slate-400 italic">
-                    <div className="w-2 h-2 rounded-full bg-airtel-600 animate-ping"></div>
-                    <span>{t('advisor.evaluatingText', 'Accel AI Advisor analyzing catalogue dependencies & tier rules...')}</span>
-                  </div>
-                )}
-
               </div>
             )}
 
-            {/* Recommendation Presentation Card */}
-            {recommendation && (
-              <div className="space-y-6">
-                
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div>
-                    <Badge variant="brand" className="mb-1">{t('advisor.recBadge', 'Recommended Bundle')}</Badge>
-                    <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                      {recommendation.bundleName}
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Curated for: {recommendation.businessSummary}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs text-slate-400">{t('advisor.estMonthly', 'Estimated Monthly')}</span>
-                    <div className="text-2xl font-extrabold text-airtel-700">
-                      ₹{recommendation.estimatedMonthlyPrice.toLocaleString('en-IN')}
-                      <span className="text-xs font-normal text-slate-500">/mo</span>
+            {/* Chat Message Stream */}
+            {messages.map((msg) => (
+              <div key={msg.id} className="space-y-3">
+                {/* User Message */}
+                {msg.sender === 'user' ? (
+                  <div className="flex justify-end">
+                    <div className="max-w-xl bg-slate-900 text-white p-4 rounded-3xl rounded-tr-xs text-xs font-medium leading-relaxed shadow-xs">
+                      <div>{msg.text}</div>
+                      <div className="text-[10px] text-slate-400 text-right mt-1.5 font-mono">{msg.time}</div>
                     </div>
-                    <span className="text-[10px] text-slate-400">{t('advisor.plusGst', '+ 18% GST (Input Credit)')}</span>
                   </div>
-                </div>
-
-                {/* Justification Reasoning */}
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-airtel-600" />
-                      <span>{t('advisor.whyFits', 'Why This Bundle Fits Your Operations')}</span>
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={() => speakText(`Here is your curated bundle: ${recommendation.bundleName}. ${recommendation.reasoning.join('. ')}`)}
-                      className="inline-flex items-center space-x-1 text-slate-600 hover:text-airtel-600 text-xs font-semibold"
-                    >
-                      <Volume2 className="w-3.5 h-3.5 text-airtel-600" />
-                      <span>Listen to Advisor</span>
-                    </button>
-                  </div>
-                  <ul className="space-y-1.5 text-xs text-slate-600">
-                    {recommendation.reasoning.map((reason, idx) => (
-                      <li key={idx} className="flex items-start space-x-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                        <span>{reason}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Product Breakdown Grid */}
-                <div className="space-y-2.5">
-                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    {t('advisor.includedServices', 'Included Services')} ({recommendation.recommendedProducts.length})
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {recommendation.recommendedProducts.map((prod) => (
-                      <div
-                        key={prod.productId}
-                        className="p-3.5 rounded-xl border border-slate-200 bg-white hover:shadow-sm transition-shadow flex items-start justify-between"
-                      >
-                        <div className="space-y-1">
-                          <div className="text-xs font-bold text-slate-900">{prod.productName}</div>
-                          <div className="text-[11px] text-slate-500">{prod.speedBandwidth} &bull; {prod.category}</div>
-                          <Badge variant="neutral" className="text-[10px]">{prod.productId}</Badge>
-                        </div>
-                        <div className="text-right text-xs font-bold text-slate-800">
-                          ₹{prod.monthlyPrice}/mo
+                ) : (
+                  /* Consultant Message */
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm mt-1">
+                      AI
+                    </div>
+                    
+                    <div className="space-y-4 max-w-2xl flex-1">
+                      {/* Consultant Message Bubble */}
+                      <div className="bg-white p-4 sm:p-5 rounded-3xl rounded-tl-xs border border-slate-200 text-xs sm:text-sm text-slate-800 leading-relaxed shadow-xs space-y-2">
+                        <div className="whitespace-pre-line font-medium text-slate-800">{msg.text}</div>
+                        
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] text-slate-400">
+                          <button
+                            type="button"
+                            onClick={() => speakText(msg.text)}
+                            className="inline-flex items-center space-x-1 text-slate-500 hover:text-red-600 font-bold transition-colors"
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                            <span>Listen to Consultant</span>
+                          </button>
+                          <span className="font-mono">{msg.time}</span>
                         </div>
                       </div>
-                    ))}
+
+                      {/* Interactive Recommended Bundle Card (if provided by bot) */}
+                      {msg.bundle && (
+                        <div className="bg-white rounded-3xl border-2 border-red-500/80 p-5 sm:p-6 shadow-md space-y-5 animate-fadeIn">
+                          {/* Card Header */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                            <div>
+                              <div className="flex items-center space-x-2 mb-1">
+                                <Badge variant="brand">Curated Telecom Bundle</Badge>
+                                <span className="text-[10px] font-mono text-slate-400">Official Catalogue</span>
+                              </div>
+                              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                                {msg.bundle.bundleName}
+                              </h3>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {msg.bundle.businessSummary}
+                              </p>
+                            </div>
+
+                            <div className="text-left sm:text-right bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-2xl">
+                              <span className="text-[10px] uppercase font-bold text-slate-400">Monthly Plan Rate</span>
+                              <div className="text-2xl font-extrabold text-red-600">
+                                ₹{msg.bundle.estimatedMonthlyPrice?.toLocaleString('en-IN')}
+                                <span className="text-xs font-normal text-slate-500">/mo</span>
+                              </div>
+                              <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                                ₹1,000 One-Time Setup Policy &bull; + 18% GST Credit
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Consultative Reasoning Breakdown */}
+                          {msg.bundle.reasoning && msg.bundle.reasoning.length > 0 && (
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                              <h4 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center space-x-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-red-600" />
+                                <span>Why This Bundle Fits Your Operations</span>
+                              </h4>
+                              <ul className="space-y-1.5 text-xs text-slate-600">
+                                {msg.bundle.reasoning.map((reason, rIdx) => (
+                                  <li key={rIdx} className="flex items-start space-x-2">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                    <span>{reason}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Included Products Grid */}
+                          <div className="space-y-2.5">
+                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                              <span>Included Services & Official Products ({msg.bundle.recommendedProducts?.length || 0})</span>
+                              <span className="text-[10px] text-slate-400 font-normal">Grounded in database</span>
+                            </h4>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {msg.bundle.recommendedProducts?.map((prod) => (
+                                <div
+                                  key={prod.productId}
+                                  className="p-3.5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all flex items-start justify-between gap-2 shadow-2xs"
+                                >
+                                  <div className="space-y-1">
+                                    <div className="flex items-center space-x-1.5">
+                                      <span className="px-1.5 py-0.5 rounded bg-slate-100 font-mono text-[10px] font-bold text-slate-700">
+                                        {prod.productId}
+                                      </span>
+                                      <span className="text-xs font-bold text-slate-900">{prod.productName}</span>
+                                    </div>
+                                    <div className="text-[11px] text-slate-500">
+                                      {prod.speedBandwidth || prod.category}
+                                    </div>
+                                  </div>
+                                  <div className="text-right text-xs font-extrabold text-slate-800 whitespace-nowrap">
+                                    ₹{prod.monthlyPrice}/mo
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Alternative Bundles Toggle Section */}
+                          {msg.alternatives && msg.alternatives.length > 0 && (
+                            <div className="pt-2 border-t border-slate-100 space-y-2">
+                              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                Alternative Bundle Options
+                              </h4>
+                              <div className="space-y-2">
+                                {msg.alternatives.map((alt, aIdx) => (
+                                  <div
+                                    key={aIdx}
+                                    className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                                  >
+                                    <div>
+                                      <div className="font-extrabold text-xs text-slate-900">{alt.bundleName}</div>
+                                      <p className="text-[11px] text-slate-500">{alt.difference}</p>
+                                    </div>
+                                    <div className="flex items-center space-x-3 shrink-0">
+                                      <span className="font-extrabold text-xs text-slate-900">
+                                        ₹{alt.estimatedMonthlyPrice}/mo
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSelectAlternative(alt)}
+                                        className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all shadow-2xs"
+                                      >
+                                        Switch to this Bundle
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Card Action Buttons */}
+                          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <span className="text-[11px] text-slate-500">
+                              Instant checkout with 12, 24, or 36-month tenure discounts.
+                            </span>
+
+                            <Button
+                              variant="primary"
+                              size="md"
+                              onClick={handleProceedToQuote}
+                              icon={ArrowRight}
+                              className="w-full sm:w-auto text-xs px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold shadow-md shadow-red-600/20"
+                            >
+                              Accept Bundle & Proceed to Quote
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Interactive Suggestion Chips (rendered below consultant reply) */}
+                      {msg.suggestedQuickReplies && msg.suggestedQuickReplies.length > 0 && (
+                        <div className="space-y-1.5 pt-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">
+                            Suggested Quick Actions:
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {msg.suggestedQuickReplies.map((chip, cIdx) => (
+                              <button
+                                key={cIdx}
+                                type="button"
+                                disabled={isConsulting}
+                                onClick={() => handleSelectQuickReply(chip)}
+                                className="px-3.5 py-1.5 rounded-full border border-slate-300 bg-white hover:border-red-500 hover:bg-red-50 text-slate-700 hover:text-red-700 text-xs font-semibold transition-all shadow-2xs active:scale-95 text-left"
+                              >
+                                {chip}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
                   </div>
-                </div>
+                )}
+              </div>
+            ))}
 
-                {/* Action Buttons */}
-                <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <Button
-                    variant="secondary"
-                    size="md"
-                    onClick={handleRestart}
-                    icon={RotateCcw}
-                    className="w-full sm:w-auto text-xs"
-                  >
-                    {t('advisor.adjustReq', 'Adjust Requirements')}
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={handleProceedToQuote}
-                    icon={ArrowRight}
-                    className="w-full sm:w-auto text-sm px-6"
-                  >
-                    {t('advisor.acceptBundle', 'Accept Bundle & Customize Quote')}
-                  </Button>
+            {/* Consultant Typing / Thinking Indicator */}
+            {isConsulting && (
+              <div className="flex items-center space-x-3 animate-fadeIn">
+                <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm">
+                  AI
                 </div>
-
+                <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-xs border border-slate-200 text-xs text-slate-500 font-medium flex items-center space-x-2 shadow-xs">
+                  <div className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
+                  <span>Accel Telecom Consultant analyzing requirements & official catalogue...</span>
+                </div>
               </div>
             )}
 
+            <div ref={chatBottomRef} />
           </div>
-        )}
 
-        {/* VIEW MODE 2: WHATSAPP BOT SIMULATOR (Stretch Goal #1) */}
-        {viewMode === 'whatsapp' && (
-          <div className="max-w-md mx-auto bg-slate-900 rounded-3xl shadow-2xl border-4 border-slate-800 overflow-hidden flex flex-col h-[650px]">
-            {/* WhatsApp Header */}
-            <div className="bg-[#075E54] text-white p-3 flex items-center justify-between shadow-md">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-9 h-9 rounded-full bg-airtel-600 flex items-center justify-center font-bold text-white text-sm border-2 border-white/50">
-                  AB
-                </div>
-                <div>
-                  <div className="flex items-center space-x-1.5">
-                    <span className="font-bold text-xs">Accel Business Bot</span>
-                    <span className="w-3.5 h-3.5 rounded-full bg-emerald-400 text-[#075E54] flex items-center justify-center text-[9px] font-black" title="Verified Enterprise Account">✓</span>
-                  </div>
-                  <div className="text-[10px] text-emerald-200">Official • Typically replies instantly</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2 text-white/80">
+          {/* Chat Input Bar */}
+          <div className="p-3.5 sm:p-4 bg-white border-t border-slate-200">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
+              className="flex items-center space-x-2"
+            >
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={inputText}
+                  disabled={isConsulting}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="Tell me about your business, team size, internet problems, or budget..."
+                  className="w-full pl-4 pr-10 py-3 rounded-2xl border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all shadow-inner"
+                />
+
+                {/* Voice Input Button */}
                 <button
                   type="button"
                   onClick={startVoiceInput}
-                  className={`p-1.5 rounded-full hover:bg-white/10 ${isListening ? 'text-red-300 animate-pulse' : ''}`}
-                  title="Voice input"
+                  disabled={isConsulting}
+                  className={`absolute right-2 top-2 p-1.5 rounded-xl transition-all ${
+                    isListening
+                      ? 'bg-red-600 text-white animate-pulse'
+                      : 'text-slate-400 hover:text-red-600 hover:bg-slate-100'
+                  }`}
+                  title="Speak your requirements"
                 >
                   <Mic className="w-4 h-4" />
                 </button>
-                <button
-                  type="button"
-                  onClick={handleRestart}
-                  className="p-1.5 rounded-full hover:bg-white/10 text-xs"
-                  title="Restart chat"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Chat Messages Body */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#E5DDD5]">
-              {/* DPDP Act 2023 End-to-End Encryption Notice */}
-              <div className="text-center my-2">
-                <span className="inline-block px-3 py-1 rounded-lg bg-[#FCF4CB] text-[10px] text-slate-700 shadow-xs border border-amber-200/50">
-                  🔒 Messages are end-to-end encrypted under DPDP Act 2023.
-                </span>
               </div>
 
-              {/* Message History */}
-              {chatMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs shadow-xs relative ${
-                      msg.sender === 'user'
-                        ? 'bg-[#DCF8C6] text-slate-900 rounded-tr-none'
-                        : 'bg-white text-slate-900 rounded-tl-none'
-                    }`}
-                  >
-                    <div className="leading-relaxed">{msg.text}</div>
-
-                    {/* Interactive Bundle Card inside WhatsApp when Complete */}
-                    {msg.isRecommendation && msg.data && (
-                      <div className="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-                        <div className="font-extrabold text-slate-900 text-xs">{msg.data.bundleName}</div>
-                        <div className="text-base font-black text-airtel-700">₹{msg.data.estimatedMonthlyPrice}/mo <span className="text-[10px] text-slate-500 font-normal">+ 18% GST</span></div>
-                        <div className="text-[10px] text-slate-600">Includes: {msg.data.recommendedProducts.map(p => p.productName).join(', ')}</div>
-                        <button
-                          type="button"
-                          onClick={handleProceedToQuote}
-                          className="w-full mt-2 py-2 rounded-lg bg-airtel-600 hover:bg-airtel-700 text-white font-bold text-xs shadow-sm flex items-center justify-center space-x-1"
-                        >
-                          <span>Proceed to Quote & Checkout</span>
-                          <ArrowRight className="w-3 h-3" />
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-end space-x-1 mt-1 text-[9px] text-slate-400">
-                      <span>{msg.time}</span>
-                      {msg.sender === 'user' && (
-                        <span className="text-sky-500 font-bold">✓✓</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Interactive Quick-Reply Option Pills for current active question */}
-                  {msg.question && !recommendation && (
-                    <div className="mt-2 space-y-1.5 w-[85%]">
-                      {msg.question.options.map((opt, oIdx) => (
-                        <button
-                          key={oIdx}
-                          disabled={isEvaluating}
-                          onClick={() => handleSelectOption(msg.question.id, opt.value, opt.label)}
-                          className="w-full text-left px-3 py-2 rounded-xl bg-white border border-emerald-300 text-emerald-800 text-xs font-semibold hover:bg-emerald-50 active:scale-95 transition shadow-xs flex items-center justify-between cursor-pointer"
-                        >
-                          <span>{opt.label}</span>
-                          <ArrowRight className="w-3 h-3 text-emerald-600" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {isEvaluating && (
-                <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-2xl rounded-tl-none max-w-[60%] text-xs text-slate-500 italic shadow-xs">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></div>
-                  <span>Accel Bot typing...</span>
-                </div>
-              )}
-
-              <div ref={chatBottomRef} />
-            </div>
-
-            {/* WhatsApp Input Bar */}
-            <div className="bg-[#F0F2F5] p-2.5 flex items-center space-x-2 border-t border-slate-200">
-              <div className="flex-1 bg-white rounded-full px-3.5 py-1.5 text-xs text-slate-400 border border-slate-300">
-                {recommendation ? 'Bundle recommended above' : 'Tap an option above or speak...'}
-              </div>
+              {/* Send Button */}
               <button
-                type="button"
-                onClick={startVoiceInput}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-white transition-all ${
-                  isListening ? 'bg-red-600 animate-pulse ring-2 ring-red-400' : 'bg-[#128C7E] hover:bg-[#075E54]'
-                }`}
-                title="Tap to speak"
+                type="submit"
+                disabled={!inputText.trim() || isConsulting}
+                className="p-3 rounded-2xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white font-bold transition-all shadow-md shadow-red-600/20 active:scale-95 shrink-0"
               >
-                <Mic className="w-4 h-4" />
+                <Send className="w-4 h-4" />
               </button>
+            </form>
+
+            <div className="flex items-center justify-between mt-2 px-1 text-[11px] text-slate-400">
+              <span className="flex items-center space-x-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Grounded in official 25-product enterprise catalogue</span>
+              </span>
+              <span>Tap microphone for hands-free voice consultation</span>
             </div>
           </div>
-        )}
+
+        </div>
 
       </main>
     </div>
