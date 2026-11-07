@@ -130,25 +130,25 @@ To eliminate digital adoption barriers for micro-enterprises across every Indian
 
 ---
 
-## 4. Pre-Configured Demo Credentials & Quick Switcher
+## 4. Authentication & User Credentials Guide
 
-Use the **"Demo Role" dropdown pill** in the top navigation bar to switch between personas instantly in one click without re-typing passwords:
+The platform implements role-based access control (RBAC). You can sign in using either an **Email Address** or **10-Digit Phone Number** with the default password **`Password@123`** on the [Sign In Page (`/login`)](http://localhost:5173/login).
 
-```
-[ Top Navbar ] -> Click "Demo Role: Customer" Dropdown -> Select:
-  ├── "Kirana Owner" (Sneha Rao / Saffron Bakers)    -> Opens /dashboard
-  ├── "Sales Partner" (Amit Verma - Channel Partner) -> Opens /partner
-  └── "Executive Admin" (Priya Nair - Growth Head)   -> Opens /admin
-```
+> [!TIP]
+> For a full directory of all accounts, operational circles, specimen government registry numbers, and testing scenarios, see the dedicated [**User Credentials Reference Guide (`CREDENTIALS.md`)**](CREDENTIALS.md).
 
-### Manual Sign-In Credentials (`/login`):
+### Pre-Configured Accounts Matrix:
 
-| Persona Role | Name & Business | Email Address | Password | Landing Screen |
-| :--- | :--- | :--- | :--- | :--- |
-| **Customer (Micro Retail)** | Sneha Rao (Saffron Bakers &bull; Lead L00002) | `sneha@saffronbakers.in` | `Password@123` | Customer Dashboard (`/dashboard`) |
-| **Customer (Professional)** | Rajesh Gupta (Balaji Dental Care) | `rajesh@guptasupermart.in` | `Password@123` | Customer Dashboard (`/dashboard`) |
-| **Sales Channel Partner** | Amit Verma (Delhi NCR) | `partner@accel.com` | `Password@123` | Partner Portal (`/partner`) |
-| **Executive Admin** | Priya Nair (SME Growth Head) | `admin@accel.com` | `Password@123` | Executive Analytics (`/admin`) |
+| Role | User Name | Email (User ID) | Phone (Alt ID) | Password | Operational Circle | Target Landing Screen |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **MSME Customer** | **Rajesh Gupta** | `rajesh@guptasupermart.in` | `9810123457` | `Password@123` | Delhi NCR / Kochi *(Verified KYC)* | [Customer Dashboard (`/dashboard`)](http://localhost:5173/dashboard) |
+| **MSME Customer** | **Sneha Rao** | `sneha@saffronbakers.in` | `9810123456` | `Password@123` | Ludhiana, Punjab *(Lead L00002)* | [Customer Dashboard (`/dashboard`)](http://localhost:5173/dashboard) |
+| **Channel Partner** | **Amit Verma** | `partner@accel.com` | `9871122334` | `Password@123` | **Delhi NCR** *(Code: `CP-DEL-101`)* | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
+| **Channel Partner** | **Vikram Sharma** | `vikram.partner@accel.com` | `9871122335` | `Password@123` | **Delhi NCR** *(Code: `CP-DEL-102`)* | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
+| **Channel Partner** | **Rohit Deshmukh** | `rohit.mumbai@accel.com` | `9820011223` | `Password@123` | **Mumbai Metro** *(Code: `CP-MUM-201`)* | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
+| **Channel Partner** | **Karthik Reddy** | `karthik.blr@accel.com` | `9845011224` | `Password@123` | **Bengaluru Urban** *(Code: `CP-BLR-301`)* | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
+| **Channel Partner** | **Sachin Patil** | `sachin.pune@accel.com` | `9850011225` | `Password@123` | **Pune Hub** *(Code: `CP-PUN-401`)* | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
+| **Executive Admin** | **Priya Nair** | `admin@accel.com` | `9988776655` | `Password@123` | **Pan-India** *(All 22 Circles)* | [Executive Analytics (`/admin`)](http://localhost:5173/admin) |
 
 ---
 
@@ -303,6 +303,7 @@ Compared to the case-study baseline cohort of 5,000 SMB leads:
 
 ## 9. Complete Documentation Index
 
+- [User IDs & Passwords Reference Guide](CREDENTIALS.md)
 - [Role-Based Architecture & Workflow Manual](docs/ROLES_AND_WORKFLOWS.md)
 - [Business & System Requirements](docs/REQUIREMENTS.md)
 - [User Journeys & Experience Flows](docs/USER_JOURNEYS.md)
