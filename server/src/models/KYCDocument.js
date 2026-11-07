@@ -68,6 +68,23 @@ const kycDocumentSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    assignedKycPartner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+    },
+    assignedPartnerDetails: {
+      name: { type: String, default: '' },
+      phone: { type: String, default: '' },
+      partnerCode: { type: String, default: '' },
+      agencyName: { type: String, default: '' },
+      territoryCircle: { type: String, default: 'Delhi NCR' },
+    },
+    assistanceRequestId: {
+      type: String,
+      default: '',
+      index: true,
+    },
     partnerOverride: {
       isOverridden: { type: Boolean, default: false },
       partnerName: { type: String, default: '' },

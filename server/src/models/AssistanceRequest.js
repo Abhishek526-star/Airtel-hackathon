@@ -46,6 +46,23 @@ const assistanceRequestSchema = new mongoose.Schema(
       default: 'KYC_ASSISTANCE',
       index: true,
     },
+    kycDocument: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'KYCDocument',
+      index: true,
+    },
+    documentType: {
+      type: String,
+      default: '',
+    },
+    ocrExtractedId: {
+      type: String,
+      default: '',
+    },
+    verificationIssue: {
+      type: String,
+      default: '',
+    },
     notes: {
       type: String,
       trim: true,
