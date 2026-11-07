@@ -7,6 +7,7 @@ import { SocketProvider } from './context/SocketContext';
 
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
+import AIChatWidget from './components/common/AIChatWidget';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -112,6 +113,7 @@ const AppContent = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      <AIChatWidget />
       <Footer />
     </div>
   );

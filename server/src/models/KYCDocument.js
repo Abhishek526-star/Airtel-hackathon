@@ -46,10 +46,21 @@ const kycDocumentSchema = new mongoose.Schema(
     ocrExtractedData: {
       rawText: { type: String, default: '' },
       extractedName: { type: String, default: '' },
+      tradeName: { type: String, default: '' },
       extractedId: { type: String, default: '' },
       extractedAddress: { type: String, default: '' },
       signatoryName: { type: String, default: '' },
+      issueDate: { type: String, default: '' },
+      detectedDocumentType: { type: String, default: '' },
       confidenceScore: { type: Number, default: 0.95 },
+      discrepancies: [{ type: String }],
+      crossMatchResults: {
+        nameMatch: { type: Boolean, default: true },
+        signatoryMatch: { type: Boolean, default: true },
+        stateMatch: { type: Boolean, default: true },
+        formatValid: { type: Boolean, default: true },
+      },
+      verifiedByMethod: { type: String, default: 'GEMINI_AI_OCR' },
     },
     registryValidation: {
       registryType: { type: String, default: 'GSTIN' },

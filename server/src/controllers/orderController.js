@@ -3,6 +3,8 @@ const Quote = require('../models/Quote');
 const BusinessProfile = require('../models/BusinessProfile');
 const KYCDocument = require('../models/KYCDocument');
 const User = require('../models/User');
+const Invoice = require('../models/Invoice');
+const PaymentTransaction = require('../models/PaymentTransaction');
 const { emitOrderCreated, emitOrderStatusUpdated, emitTechnicianTaskUpdated } = require('../socket');
 
 const generateOrderId = () => {
@@ -190,6 +192,102 @@ exports.createOrder = async (req, res, next) => {
     // Mark quote as accepted
     quote.status = 'ACCEPTED';
     await quote.save();
+
+    // Generate Immutable B2B GST Tax Invoice for this specific Order
+    try {
+      const invoiceSeq = orderId.replace(/[^0-9]/g, '') || Math.floor(1000 + Math.random() * 9000);
+      const invoiceNumber = `ACCEL/2026/B2B-INV-${invoiceSeq}`;
+
+      const invoiceItems = (quote.items || []).map((item) => {
+        let sac = '998412';
+        const cat = (item.category || '').toLowerCase();
+        if (cat.includes('voice') || cat.includes('sim') || cat.includes('mobile')) sac = '998413';
+        else if (cat.includes('cloud') || cat.includes('whatsapp')) sac = '998422';
+        else if (cat.includes('security') || cat.includes('iot')) sac = '998419';
+
+        const unitRate = item.unitMonthlyPrice || item.monthlyPrice || 999;
+        const qty = item.quantity || 1;
+        const lineTotal = unitRate * qty;
+        return {
+          productId: item.productId,
+          productName: item.productName,
+          description: `${item.productName} (${item.speedBandwidth || item.category || 'Monthly Recurring Service'})`,
+          sac,
+          quantity: qty,
+          rate: unitRate,
+          discount: 0,
+          taxable: lineTotal,
+        };
+      });
+
+      if (quote.totalSetupFee && quote.totalSetupFee > 0) {
+        invoiceItems.push({
+          productId: 'SETUP-01',
+          productName: 'One-Time Optical Fiber Installation & ONT Setup',
+          description: 'Physical fiber drop cable, optical termination box, ONT router configuration, and technician labor',
+          sac: '998419',
+          quantity: 1,
+          rate: quote.totalSetupFee,
+          discount: 0,
+          taxable: quote.totalSetupFee,
+        });
+      }
+
+      const taxableAmount = (quote.discountedMrc || quote.baseMrc || 0) + (quote.totalSetupFee || 0);
+      const totalGst = (quote.gstMrc || 0) + (quote.gstSetup || 0);
+      const cgstAmount = parseFloat((totalGst / 2).toFixed(2));
+      const sgstAmount = parseFloat((totalGst / 2).toFixed(2));
+      const totalAmount = quote.totalOneTimePayable || (taxableAmount + totalGst);
+
+      const invoice = await Invoice.create({
+        invoiceNumber,
+        order: order._id,
+        orderId: order.orderId,
+        user: req.user._id,
+        businessProfile: profile ? profile._id : null,
+        customerDetails: {
+          name: req.user.fullName,
+          tradeName: profile?.tradeName || 'Gupta Supermart',
+          legalName: profile?.legalName || req.user.fullName,
+          gstin: profile?.gstin || '07AAAAA0000A1Z5',
+          phone: req.user.phone,
+          address: installationAddress || (profile?.address?.street || 'Shop 14, Main Market'),
+          city: targetCity,
+          state: profile?.address?.state || 'Delhi',
+          pincode: pincode || '110001',
+        },
+        issueDate: new Date(),
+        paymentStatus: 'PAID',
+        paymentReference: order.paymentDetails?.transactionRef || 'TXN-SIM-' + Math.floor(100000 + Math.random() * 900000),
+        paymentMode: 'Corporate AutoPay Mandate (e-NACH)',
+        paidAt: new Date(),
+        taxableAmount,
+        cgstAmount,
+        sgstAmount,
+        totalAmount,
+        items: invoiceItems,
+        isIncremental: quote.isIncremental || false,
+        pdfDownloadUrl: `/api/invoices/download?orderId=${order.orderId}`,
+      });
+
+      await PaymentTransaction.create({
+        transactionId: invoice.paymentReference,
+        order: order._id,
+        orderId: order.orderId,
+        invoice: invoice._id,
+        invoiceNumber: invoice.invoiceNumber,
+        user: req.user._id,
+        amount: totalAmount,
+        currency: 'INR',
+        status: 'SUCCESS',
+        mode: 'Corporate AutoPay Mandate (e-NACH)',
+        gateway: 'Airtel Payments Bank / B2B Corporate Gateway',
+        gatewayRef: 'APBGW-' + Math.floor(10000000 + Math.random() * 90000000),
+        timestamp: new Date(),
+      });
+    } catch (invErr) {
+      console.warn('[Invoice Generation Warning]', invErr.message);
+    }
 
     // Real-Time Notification to Admin, User, and assigned Field Technician
     emitOrderCreated(order);

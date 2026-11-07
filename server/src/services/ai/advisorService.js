@@ -1,5 +1,6 @@
 const Product = require('../../models/Product');
 const env = require('../../config/env');
+const geminiClient = require('./geminiClient');
 
 class AdvisorService {
   /**
@@ -157,25 +158,23 @@ Return strictly valid JSON:
 }
 `;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${env.GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: 'application/json' },
-          }),
-        }
-      );
+      const rawJson = await geminiClient.generateText({
+        prompt,
+        responseMimeType: 'application/json',
+        temperature: 0.2,
+      });
 
-      if (!response.ok) {
+      if (!rawJson) {
         return this.getRuleBasedRecommendation(profile);
       }
 
-      const resData = await response.json();
-      const content = resData.candidates?.[0]?.content?.parts?.[0]?.text;
-      const parsed = JSON.parse(content);
+      let parsed = null;
+      try {
+        parsed = JSON.parse(rawJson);
+      } catch (e) {
+        const cleaned = rawJson.replace(/```json/g, '').replace(/```/g, '').trim();
+        parsed = JSON.parse(cleaned);
+      }
 
       const productMap = new Map(allProducts.map((p) => [p.productId, p]));
       const recommendedProducts = (parsed.recommendedProductIds || [])

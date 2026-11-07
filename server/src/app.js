@@ -21,6 +21,7 @@ const mockRoutes = require('./routes/mockRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const technicianRoutes = require('./routes/technicianRoutes');
+const supportRoutes = require('./routes/supportRoutes');
 
 const app = express();
 
@@ -91,6 +92,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/mock', mockRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/technician', technicianRoutes);
+app.use('/api/support', supportRoutes);
 
 // Catch-all 404 handler for undefined API routes
 app.use('/api/*', (req, res) => {

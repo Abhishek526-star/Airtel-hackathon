@@ -28,7 +28,15 @@ import {
   Server,
   Radio,
   Check,
-  AlertCircle
+  AlertCircle,
+  Receipt,
+  CreditCard,
+  Search,
+  Filter,
+  ArrowUpDown,
+  Eye,
+  Calendar,
+  ArrowRight
 } from 'lucide-react';
 import RequestAssistanceModal from '../components/partner/RequestAssistanceModal';
 
@@ -61,6 +69,18 @@ const CustomerDashboardPage = () => {
   const [slaService, setSlaService] = useState(null);
   const [isSlaModalOpen, setIsSlaModalOpen] = useState(false);
 
+  // Billing & Invoices Hub State
+  const [activeMainTab, setActiveMainTab] = useState('SERVICES'); // 'SERVICES' | 'BILLING'
+  const [invoices, setInvoices] = useState([]);
+  const [billingSummary, setBillingSummary] = useState(null);
+  const [isInvoicesLoading, setIsInvoicesLoading] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('ALL');
+  const [invoiceSortBy, setInvoiceSortBy] = useState('issueDate');
+  const [invoiceSortOrder, setInvoiceSortOrder] = useState('desc');
+  const [selectedInvoiceModal, setSelectedInvoiceModal] = useState(null);
+
   // Real-Time Event Listeners
   useRealtimeEvent('ORDER_STATUS_UPDATED', (payload) => {
     setLiveToast(`Live Update: Order ${payload.orderId} progressed to ${payload.orderStatus}.`);
@@ -90,7 +110,45 @@ const CustomerDashboardPage = () => {
   useEffect(() => {
     fetchCustomerOrders();
     fetchActiveServices();
+    fetchInvoices();
+    fetchTransactions();
   }, []);
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [invoiceStatusFilter, invoiceSortBy, invoiceSortOrder]);
+
+  const fetchInvoices = async () => {
+    try {
+      setIsInvoicesLoading(true);
+      const params = new URLSearchParams();
+      if (invoiceSearchQuery.trim()) params.append('search', invoiceSearchQuery.trim());
+      if (invoiceStatusFilter && invoiceStatusFilter !== 'ALL') params.append('status', invoiceStatusFilter);
+      params.append('sortBy', invoiceSortBy);
+      params.append('sortOrder', invoiceSortOrder);
+
+      const res = await api.get(`/invoices?${params.toString()}`);
+      if (res.success && res.data) {
+        setInvoices(res.data.invoices || []);
+        setBillingSummary(res.data.summary || null);
+      }
+    } catch (err) {
+      console.warn('[CustomerDashboardPage] Invoices fetch error:', err);
+    } finally {
+      setIsInvoicesLoading(false);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      const res = await api.get('/invoices/transactions/history');
+      if (res.success && res.data) {
+        setTransactions(res.data || []);
+      }
+    } catch (err) {
+      console.warn('[CustomerDashboardPage] Transactions fetch error:', err);
+    }
+  };
 
   const fetchCustomerOrders = async () => {
     try {
@@ -352,6 +410,49 @@ const CustomerDashboardPage = () => {
             </Button>
           </div>
         </div>
+
+        {/* Hub Main Navigation Tabs */}
+        <div className="flex items-center space-x-2 border-b border-slate-200 pb-2">
+          <button
+            type="button"
+            onClick={() => setActiveMainTab('SERVICES')}
+            className={`flex items-center space-x-2 px-5 py-2.5 rounded-2xl font-bold text-xs transition-all ${
+              activeMainTab === 'SERVICES'
+                ? 'bg-airtel-600 text-white shadow-md shadow-red-500/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Wifi className="w-4 h-4" />
+            <span>Active Services & Operations</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveMainTab('BILLING');
+              fetchInvoices();
+              fetchTransactions();
+            }}
+            className={`flex items-center space-x-2 px-5 py-2.5 rounded-2xl font-bold text-xs transition-all ${
+              activeMainTab === 'BILLING'
+                ? 'bg-airtel-600 text-white shadow-md shadow-red-500/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <Receipt className="w-4 h-4" />
+            <span>Bill & Invoice History</span>
+            {invoices.length > 0 && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                activeMainTab === 'BILLING' ? 'bg-white text-airtel-700' : 'bg-slate-200 text-slate-700'
+              }`}>
+                {invoices.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {activeMainTab === 'SERVICES' && (
+          <div className="space-y-6">
 
         {/* Telemetry & SLA Metric Gauges */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -784,6 +885,340 @@ const CustomerDashboardPage = () => {
           </div>
         </div>
 
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 2: COMPREHENSIVE BILL & INVOICE HISTORY               */}
+        {/* ========================================================= */}
+        {activeMainTab === 'BILLING' && (
+          <div className="space-y-6">
+            
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+                <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">Total Invoiced</div>
+                <div className="text-2xl font-extrabold text-slate-900">
+                  ₹{(billingSummary?.totalInvoiced || invoices.reduce((s, i) => s + (i.totalAmount || 0), 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </div>
+                <div className="text-[11px] text-slate-500">Across all orders & services</div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+                <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">Total Paid</div>
+                <div className="text-2xl font-extrabold text-emerald-600">
+                  ₹{(billingSummary?.totalPaid || invoices.filter(i => i.paymentStatus === 'PAID').reduce((s, i) => s + (i.totalAmount || 0), 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </div>
+                <div className="text-[11px] text-slate-500">100% Settled via AutoPay</div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+                <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">Paid Invoices</div>
+                <div className="text-2xl font-extrabold text-slate-800">
+                  {billingSummary?.paidCount || invoices.filter(i => i.paymentStatus === 'PAID').length} Invoices
+                </div>
+                <div className="text-[11px] text-slate-500">DoT Rule 46 Compliant</div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
+                <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">e-NACH AutoPay</div>
+                <div className="text-xl font-bold text-emerald-600 flex items-center space-x-1.5 pt-0.5">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  <span>Active Mandate</span>
+                </div>
+                <div className="text-[11px] text-slate-500">Automated Corporate Mandate</div>
+              </div>
+            </div>
+
+            {/* Invoices Search, Filter & Sort Toolbar */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
+              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                
+                {/* Search Input */}
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search by invoice number (INV-...), order ID, service name, or transaction..."
+                    value={invoiceSearchQuery}
+                    onChange={(e) => setInvoiceSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && fetchInvoices()}
+                    className="w-full pl-9 pr-20 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={fetchInvoices}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold"
+                  >
+                    Search
+                  </button>
+                </div>
+
+                {/* Filters & Sorting */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Status Filter */}
+                  <div className="flex items-center space-x-1.5 bg-slate-50 px-2 py-1.5 rounded-xl border border-slate-200 text-xs">
+                    <Filter className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-slate-500 text-[11px] font-semibold">Status:</span>
+                    <select
+                      value={invoiceStatusFilter}
+                      onChange={(e) => setInvoiceStatusFilter(e.target.value)}
+                      className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                    >
+                      <option value="ALL">All Statuses</option>
+                      <option value="PAID">Paid Only</option>
+                      <option value="PENDING">Pending</option>
+                      <option value="FAILED">Failed</option>
+                      <option value="REFUNDED">Refunded</option>
+                    </select>
+                  </div>
+
+                  {/* Sort Order */}
+                  <div className="flex items-center space-x-1.5 bg-slate-50 px-2 py-1.5 rounded-xl border border-slate-200 text-xs">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-slate-500 text-[11px] font-semibold">Sort:</span>
+                    <select
+                      value={`${invoiceSortBy}-${invoiceSortOrder}`}
+                      onChange={(e) => {
+                        const [by, order] = e.target.value.split('-');
+                        setInvoiceSortBy(by);
+                        setInvoiceSortOrder(order);
+                      }}
+                      className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                    >
+                      <option value="issueDate-desc">Newest First</option>
+                      <option value="issueDate-asc">Oldest First</option>
+                      <option value="totalAmount-desc">Highest Amount</option>
+                      <option value="totalAmount-asc">Lowest Amount</option>
+                    </select>
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setInvoiceSearchQuery('');
+                      setInvoiceStatusFilter('ALL');
+                      setInvoiceSortBy('issueDate');
+                      setInvoiceSortOrder('desc');
+                    }}
+                    icon={RefreshCw}
+                    className="text-xs text-slate-500 hover:text-slate-800"
+                  >
+                    Reset
+                  </Button>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Invoices List Table & Responsive Cards */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900 flex items-center space-x-2">
+                    <Receipt className="w-4 h-4 text-airtel-600" />
+                    <span>Invoices & Billing Statements ({invoices.length})</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Separate, immutable GST tax invoices generated for each purchase and add-on.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddNewServices}
+                  icon={ShoppingBag}
+                  className="text-xs"
+                >
+                  Order Add-on Service
+                </Button>
+              </div>
+
+              {isInvoicesLoading ? (
+                <div className="p-12 text-center space-y-2">
+                  <div className="w-6 h-6 border-2 border-airtel-600 border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-xs text-slate-400">Loading invoice statements...</p>
+                </div>
+              ) : invoices.length > 0 ? (
+                <div className="divide-y divide-slate-100">
+                  {invoices.map((inv) => (
+                    <div key={inv._id || inv.invoiceNumber} className="p-4 sm:p-5 hover:bg-slate-50/60 transition-colors">
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        
+                        {/* Invoice & Order identifiers */}
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono font-extrabold text-xs text-slate-900 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                              {inv.invoiceNumber}
+                            </span>
+                            <Link
+                              to={`/orders/${inv.orderId}`}
+                              className="font-mono text-xs text-airtel-600 hover:underline font-semibold"
+                            >
+                              Order: {inv.orderId}
+                            </Link>
+                            <Badge
+                              variant={
+                                inv.paymentStatus === 'PAID'
+                                  ? 'success'
+                                  : inv.paymentStatus === 'PENDING'
+                                  ? 'brand'
+                                  : inv.paymentStatus === 'REFUNDED'
+                                  ? 'warning'
+                                  : 'danger'
+                              }
+                            >
+                              {inv.paymentStatus}
+                            </Badge>
+                            {inv.isIncremental && (
+                              <span className="text-[10px] bg-red-50 text-airtel-700 px-2 py-0.5 rounded-full font-bold border border-red-200">
+                                Add-on Service (₹0 Setup Fee)
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Purchased Items List */}
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            {(inv.items || []).map((it, itIdx) => (
+                              <span
+                                key={itIdx}
+                                className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-medium"
+                              >
+                                {it.productName || it.description}
+                                {it.quantity > 1 ? ` (x${it.quantity})` : ''}
+                              </span>
+                            ))}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400 pt-1">
+                            <span className="flex items-center space-x-1">
+                              <Calendar className="w-3 h-3" />
+                              <span>{new Date(inv.issueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            </span>
+                            <span>&bull;</span>
+                            <span>Taxable: ₹{(inv.taxableAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            <span>&bull;</span>
+                            <span>CGST: ₹{(inv.cgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            <span>&bull;</span>
+                            <span>SGST: ₹{(inv.sgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            <span>&bull;</span>
+                            <span>Txn Ref: <code className="text-slate-600">{inv.paymentReference}</code></span>
+                          </div>
+                        </div>
+
+                        {/* Amount & Actions */}
+                        <div className="flex items-center justify-between lg:justify-end space-x-4 border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-100">
+                          <div className="text-left lg:text-right">
+                            <div className="text-lg font-black text-slate-900">
+                              ₹{(inv.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </div>
+                            <span className="text-[10px] text-slate-400 block">Includes 18% GST</span>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setSelectedInvoiceModal(inv)}
+                              icon={Eye}
+                              className="text-xs"
+                            >
+                              View Details
+                            </Button>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleDownloadInvoice(inv.orderId)}
+                              icon={Download}
+                              className="text-xs"
+                            >
+                              PDF
+                            </Button>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-12 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                    <Receipt className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-sm text-slate-800">No Invoices Found</h4>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      No invoices match your search query or status filter. Try clearing filters or purchase a new service.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Payment Transactions Audit Log */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+              <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
+                    <CreditCard className="w-4 h-4 text-airtel-600" />
+                    <span>Payment Transactions History ({transactions.length})</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Real-time payment audit trail (SUCCESS, FAILED, REFUNDED)
+                  </p>
+                </div>
+                <Badge variant="brand">e-NACH Automated Mandate</Badge>
+              </div>
+
+              {transactions.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-600 font-bold border-y border-slate-200">
+                      <tr>
+                        <th className="py-2.5 px-3">Transaction ID</th>
+                        <th className="py-2.5 px-3">Order ID</th>
+                        <th className="py-2.5 px-3">Payment Mode</th>
+                        <th className="py-2.5 px-3">Amount</th>
+                        <th className="py-2.5 px-3">Status</th>
+                        <th className="py-2.5 px-3">Gateway Ref</th>
+                        <th className="py-2.5 px-3 text-right">Timestamp</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {transactions.map((txn, tIdx) => (
+                        <tr key={tIdx} className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-3 font-mono font-bold text-slate-900">{txn.transactionId}</td>
+                          <td className="py-2.5 px-3 font-mono text-slate-600">{txn.orderId}</td>
+                          <td className="py-2.5 px-3 text-slate-700">{txn.mode}</td>
+                          <td className="py-2.5 px-3 font-extrabold text-slate-900">₹{(txn.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          <td className="py-2.5 px-3">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                              txn.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-800' : txn.status === 'REFUNDED' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {txn.status}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500">{txn.gatewayRef || 'APBGW-991204'}</td>
+                          <td className="py-2.5 px-3 text-right text-slate-500 text-[11px]">
+                            {new Date(txn.timestamp).toLocaleString('en-IN')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-6 text-xs text-slate-400">
+                  No payment transactions recorded yet.
+                </div>
+              )}
+            </div>
+
+          </div>
+        )}
+
       </div>
 
       {/* ========================================================= */}
@@ -1109,6 +1544,135 @@ const CustomerDashboardPage = () => {
                 onClick={() => handleDownloadInvoice()}
                 icon={Download}
                 className="text-xs px-6"
+              >
+                Download Official PDF
+              </Button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Detailed Invoice Breakdown Modal */}
+      {selectedInvoiceModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+            
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-9 h-9 rounded-xl bg-red-600 text-white font-bold flex items-center justify-center text-sm">
+                  A
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">
+                    B2B Tax Invoice Details
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    {selectedInvoiceModal.invoiceNumber} &bull; Order: {selectedInvoiceModal.orderId}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedInvoiceModal(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4 text-xs font-sans">
+              <div className="grid grid-cols-2 gap-4 pb-3 border-b border-slate-200">
+                <div>
+                  <span className="font-bold text-slate-400 text-[10px] uppercase">Billed Customer</span>
+                  <div className="font-bold text-slate-900 mt-0.5">
+                    {selectedInvoiceModal.customerDetails?.tradeName || profile?.tradeName || 'Enterprise Customer'}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Legal: {selectedInvoiceModal.customerDetails?.legalName || profile?.legalName}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    GSTIN: {selectedInvoiceModal.customerDetails?.gstin || profile?.gstin || 'Unregistered'}
+                  </div>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-400 text-[10px] uppercase">Invoice Metadata</span>
+                  <div className="font-semibold text-slate-800 mt-0.5">
+                    Date: {new Date(selectedInvoiceModal.issueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Payment Status: <strong className="text-emerald-700">{selectedInvoiceModal.paymentStatus}</strong>
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Ref: <code className="text-slate-700">{selectedInvoiceModal.paymentReference}</code>
+                  </div>
+                </div>
+              </div>
+
+              {/* Service-wise Breakdown Table */}
+              <div className="space-y-2">
+                <div className="font-bold text-slate-900 text-xs">Itemized Service Pricing</div>
+                <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                  <table className="w-full text-left text-[11px]">
+                    <thead className="bg-slate-100 font-bold text-slate-600">
+                      <tr>
+                        <th className="p-2.5">Service Description</th>
+                        <th className="p-2.5">SAC</th>
+                        <th className="p-2.5 text-center">Qty</th>
+                        <th className="p-2.5 text-right">Rate</th>
+                        <th className="p-2.5 text-right">Taxable</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(selectedInvoiceModal.items || []).map((it, idx) => (
+                        <tr key={idx}>
+                          <td className="p-2.5 font-medium">{it.productName || it.description}</td>
+                          <td className="p-2.5 font-mono text-slate-500">{it.sac || '998412'}</td>
+                          <td className="p-2.5 text-center">{it.quantity || 1}</td>
+                          <td className="p-2.5 text-right">₹{(it.rate || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          <td className="p-2.5 text-right font-bold">₹{(it.taxable || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1.5 font-mono">
+                <div className="flex justify-between text-slate-600">
+                  <span>Net Taxable Amount:</span>
+                  <span>₹{(selectedInvoiceModal.taxableAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between text-slate-500">
+                  <span>CGST (9.0%):</span>
+                  <span>₹{(selectedInvoiceModal.cgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between text-slate-500">
+                  <span>SGST (9.0%):</span>
+                  <span>₹{(selectedInvoiceModal.sgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="pt-2 border-t border-slate-200 flex justify-between font-black text-sm text-slate-900">
+                  <span>Total Amount Paid:</span>
+                  <span className="text-red-600">₹{(selectedInvoiceModal.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSelectedInvoiceModal(null)}
+              >
+                Close
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleDownloadInvoice(selectedInvoiceModal.orderId)}
+                icon={Download}
+                className="px-6 text-xs"
               >
                 Download Official PDF
               </Button>

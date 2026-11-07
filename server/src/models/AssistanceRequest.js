@@ -42,7 +42,7 @@ const assistanceRequestSchema = new mongoose.Schema(
     },
     requestType: {
       type: String,
-      enum: ['KYC_ASSISTANCE', 'FIELD_VISIT', 'QUOTE_REVIEW', 'GENERAL_ASSISTANCE'],
+      enum: ['KYC_ASSISTANCE', 'FIELD_VISIT', 'QUOTE_REVIEW', 'GENERAL_ASSISTANCE', 'TECHNICAL_SUPPORT'],
       default: 'KYC_ASSISTANCE',
       index: true,
     },

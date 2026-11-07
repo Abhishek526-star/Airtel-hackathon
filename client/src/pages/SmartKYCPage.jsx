@@ -26,7 +26,11 @@ import {
   Check,
   UserCheck,
   Phone,
-  MapPin
+  MapPin,
+  ScanLine,
+  CheckCheck,
+  AlertCircle,
+  Bot
 } from 'lucide-react';
 
 const SmartKYCPage = () => {
@@ -428,8 +432,9 @@ const SmartKYCPage = () => {
               </div>
 
               {/* Document Type Selector */}
-              <div className="grid grid-cols-2 gap-3 max-w-md">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-xl">
                 <button
+                  type="button"
                   onClick={() => setDocumentType('GST_CERTIFICATE')}
                   className={`p-3 rounded-xl border text-xs font-bold transition-all text-center ${
                     documentType === 'GST_CERTIFICATE'
@@ -440,6 +445,7 @@ const SmartKYCPage = () => {
                   {t('kyc.gstTab', 'GST Certificate (15-Digit)')}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setDocumentType('UDYAM_CERTIFICATE')}
                   className={`p-3 rounded-xl border text-xs font-bold transition-all text-center ${
                     documentType === 'UDYAM_CERTIFICATE'
@@ -448,6 +454,17 @@ const SmartKYCPage = () => {
                   }`}
                 >
                   {t('kyc.udyamTab', 'Udyam MSME Registration')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDocumentType('SIGNATORY_ID')}
+                  className={`p-3 rounded-xl border text-xs font-bold transition-all text-center ${
+                    documentType === 'SIGNATORY_ID'
+                      ? 'border-airtel-600 bg-red-50 text-airtel-700 ring-2 ring-red-500/20'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                  }`}
+                >
+                  Authorized Signatory ID (PAN / Aadhaar)
                 </button>
               </div>
 
@@ -509,7 +526,13 @@ const SmartKYCPage = () => {
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <input
                   type="text"
-                  placeholder={documentType === 'GST_CERTIFICATE' ? t('kyc.manualInputGst', 'Enter 15-character GSTIN (e.g. 32TTNXB7384T1ZW)') : t('kyc.manualInputUdyam', 'Enter Udyam Number (e.g. UDYAM-KL-00-3078801)')}
+                  placeholder={
+                    documentType === 'GST_CERTIFICATE'
+                      ? t('kyc.manualInputGst', 'Enter 15-character GSTIN (e.g. 32TTNXB7384T1ZW)')
+                      : documentType === 'UDYAM_CERTIFICATE'
+                      ? t('kyc.manualInputUdyam', 'Enter Udyam Number (e.g. UDYAM-KL-00-3078801)')
+                      : 'Enter 10-char PAN (e.g. ABCDE1234F) or Aadhaar Number'
+                  }
                   value={manualId}
                   onChange={(e) => setManualId(e.target.value.toUpperCase())}
                   className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500 uppercase tracking-wider font-mono"
@@ -571,6 +594,99 @@ const SmartKYCPage = () => {
                     {uploadResult.verificationStatus}
                   </Badge>
                 </div>
+
+                {/* AI OCR Confidence Score Meter */}
+                {uploadResult && (
+                  <div className="bg-white/90 p-4 rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-700 flex items-center space-x-1.5">
+                        <ScanLine className="w-4 h-4 text-airtel-600" />
+                        <span>AI OCR & Registry Cross-Match Confidence</span>
+                      </span>
+                      <span className={`font-mono font-extrabold text-sm ${
+                        Math.round((uploadResult.confidenceScore || 0.95) * 100) >= 85
+                          ? 'text-emerald-700'
+                          : Math.round((uploadResult.confidenceScore || 0.95) * 100) >= 60
+                          ? 'text-amber-700'
+                          : 'text-red-700'
+                      }`}>
+                        {Math.round((uploadResult.confidenceScore || 0.95) * 100)}% Match
+                        {Math.round((uploadResult.confidenceScore || 0.95) * 100) >= 85
+                          ? ' • High Confidence'
+                          : Math.round((uploadResult.confidenceScore || 0.95) * 100) >= 60
+                          ? ' • Partner Review Required'
+                          : ' • Low Confidence'}
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className={`h-2.5 rounded-full transition-all duration-500 ${
+                          Math.round((uploadResult.confidenceScore || 0.95) * 100) >= 85
+                            ? 'bg-emerald-500'
+                            : Math.round((uploadResult.confidenceScore || 0.95) * 100) >= 60
+                            ? 'bg-amber-500'
+                            : 'bg-red-500'
+                        }`}
+                        style={{
+                          width: `${Math.max(5, Math.min(100, Math.round((uploadResult.confidenceScore || 0.95) * 100)))}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Extracted Credentials Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Extracted ID</span>
+                    <span className="font-mono font-bold text-xs text-slate-900 block truncate">
+                      {uploadResult.extractedId || 'N/A'}
+                    </span>
+                    <span className="text-[10px] text-slate-500">{uploadResult.documentType}</span>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Entity Name</span>
+                    <span className="font-bold text-xs text-slate-900 block truncate">
+                      {uploadResult.extractedDetails?.entityName || uploadResult.registryValidation?.matchedRecord?.legalName || uploadResult.registryValidation?.matchedRecord?.enterpriseName || user?.businessProfile?.tradeName || 'Enterprise'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 truncate">
+                      {uploadResult.extractedDetails?.tradeName || uploadResult.registryValidation?.matchedRecord?.tradeName || 'Registered'}
+                    </span>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Authorized Signatory</span>
+                    <span className="font-bold text-xs text-slate-900 block truncate">
+                      {uploadResult.extractedDetails?.signatoryName || user?.fullName || 'Authorized Person'}
+                    </span>
+                    <span className="text-[10px] text-emerald-600 font-semibold">Proprietor / Director</span>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">OCR Engine</span>
+                    <span className="font-bold text-xs text-slate-900 flex items-center space-x-1">
+                      <Bot className="w-3.5 h-3.5 text-airtel-600" />
+                      <span>{uploadResult.extractedDetails?.source === 'GEMINI_VISION_AI' ? 'Gemini 3.8 Vision' : 'AI Parser'}</span>
+                    </span>
+                    <span className="text-[10px] text-slate-500">Registry Cross-Matched</span>
+                  </div>
+                </div>
+
+                {/* Flagged Discrepancies Alert */}
+                {uploadResult.discrepancies && uploadResult.discrepancies.length > 0 && (
+                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-2 text-xs">
+                    <div className="flex items-center space-x-1.5 font-bold text-amber-900">
+                      <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                      <span>Flagged KYC Discrepancies (Sent to Smart KYC Partner for Verification):</span>
+                    </div>
+                    <ul className="list-disc pl-5 space-y-1 text-amber-800">
+                      {uploadResult.discrepancies.map((disc, dIdx) => (
+                        <li key={dIdx}>{disc}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {/* Registry Details Box */}
                 {uploadResult.registryValidation?.matchedRecord && (

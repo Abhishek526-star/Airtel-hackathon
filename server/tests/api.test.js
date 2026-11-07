@@ -750,7 +750,151 @@ async function runTests() {
       throw new Error('Active services failed to aggregate multiple purchased orders');
     }
 
-    console.log('\n>>> ALL 20 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    // ========================================================
+    // TEST 21: OCR-Based Business KYC Verification & Confidence Scoring
+    // ========================================================
+    console.log('\n--- Running Test 21: OCR-Based Business KYC with Confidence Scores & Discrepancy Detection ---');
+    const kycService = require('../src/services/kyc/kycService');
+
+    // 21a. Verify Active GSTIN
+    const activeGstResult = await kycService.verifyDocument('GST_CERTIFICATE', '32TTNXB7384T1ZW', {
+      tradeName: 'Balaji Dental Care',
+      legalName: 'Balaji Dental Care',
+    });
+    console.log('Active GSTIN Result:', activeGstResult.verificationStatus, 'Confidence:', activeGstResult.confidenceScore);
+    if (activeGstResult.verificationStatus !== 'VERIFIED' || activeGstResult.confidenceScore < 0.85) {
+      throw new Error('Active GST certificate verification failed confidence threshold');
+    }
+
+    // 21b. Verify Active Udyam Registration
+    const activeUdyamResult = await kycService.verifyDocument('UDYAM_CERTIFICATE', 'UDYAM-KL-00-3078801', {
+      tradeName: 'Balaji Dental',
+    });
+    console.log('Active Udyam Result:', activeUdyamResult.verificationStatus, 'Confidence:', activeUdyamResult.confidenceScore);
+    if (activeUdyamResult.verificationStatus !== 'VERIFIED' || activeUdyamResult.confidenceScore < 0.85) {
+      throw new Error('Active Udyam certificate verification failed');
+    }
+
+    // 21c. Detect Planted Defect: Inactive / Cancelled GSTIN
+    const cancelledGstResult = await kycService.verifyDocument('GST_CERTIFICATE', '37IHKXV5167L1ZS', {
+      tradeName: 'Vindhya Tours',
+    });
+    console.log('Cancelled GSTIN Result:', cancelledGstResult.verificationStatus, 'Discrepancies:', cancelledGstResult.discrepancies);
+    if (cancelledGstResult.verificationStatus !== 'REJECTED' || cancelledGstResult.discrepancies.length === 0) {
+      throw new Error('Cancelled GST certificate failed to trigger rejection and discrepancy alert');
+    }
+
+    // 21d. Detect Planted Defect: Authorized Signatory Name Mismatch
+    const mismatchSignatoryResult = await kycService.verifyDocument('SIGNATORY_ID', 'MISMATCH-PAN-889', {
+      contactPerson: 'Rajesh Gupta',
+    });
+    console.log('Signatory Mismatch Result:', mismatchSignatoryResult.verificationStatus, 'Confidence:', mismatchSignatoryResult.confidenceScore);
+    if (mismatchSignatoryResult.verificationStatus !== 'NEEDS_REVIEW' || mismatchSignatoryResult.crossMatchResults.signatoryMatch !== false) {
+      throw new Error('Signatory name mismatch failed to route to partner review');
+    }
+
+    // ========================================================
+    // TEST 22: Comprehensive Bill & Invoice History API
+    // ========================================================
+    console.log('\n--- Running Test 22: Comprehensive Bill & Invoice History API (Search, Filter, Sort) ---');
+
+    // 22a. Fetch all invoices
+    const allInvoicesRes = await request('/api/invoices', 'GET', null, customerToken);
+    console.log('Invoices Fetch Status:', allInvoicesRes.status);
+    console.log('Total Invoices Count:', allInvoicesRes.data.data?.invoices?.length);
+    console.log('Billing Summary:', allInvoicesRes.data.data?.summary);
+    if (allInvoicesRes.status !== 200 || !allInvoicesRes.data.data?.invoices?.length) {
+      throw new Error('Failed to retrieve customer invoice history');
+    }
+
+    const firstInvoice = allInvoicesRes.data.data.invoices[0];
+    console.log('Sample Invoice Number:', firstInvoice.invoiceNumber);
+    console.log('Sample Invoice Amount: ₹', firstInvoice.totalAmount);
+    console.log('Sample Invoice Items Count:', firstInvoice.items?.length);
+
+    // 22b. Test search filtering
+    const searchRes = await request('/api/invoices?search=ACCEL', 'GET', null, customerToken);
+    if (searchRes.status !== 200 || !searchRes.data.data?.invoices?.length) {
+      throw new Error('Invoice search filter failed');
+    }
+
+    // 22c. Test single invoice detail endpoint
+    const singleInvRes = await request(`/api/invoices/${firstInvoice._id}`, 'GET', null, customerToken);
+    if (singleInvRes.status !== 200 || singleInvRes.data.data?.invoiceNumber !== firstInvoice.invoiceNumber) {
+      throw new Error('Single invoice detail endpoint failed');
+    }
+
+    // ========================================================
+    // TEST 23: Payment Transactions Audit Trail API
+    // ========================================================
+    console.log('\n--- Running Test 23: Payment Transactions Audit Trail API ---');
+    const txnsRes = await request('/api/invoices/transactions/history', 'GET', null, customerToken);
+    console.log('Transactions Fetch Status:', txnsRes.status);
+    console.log('Total Transactions Count:', txnsRes.data.data?.length);
+    if (txnsRes.status !== 200 || !txnsRes.data.data?.length) {
+      throw new Error('Payment transactions history failed to return records');
+    }
+    const sampleTxn = txnsRes.data.data[0];
+    console.log('Sample Transaction Ref:', sampleTxn.transactionId);
+    console.log('Sample Transaction Status:', sampleTxn.status);
+    console.log('Sample Transaction Mode:', sampleTxn.mode);
+
+    // ========================================================
+    // TEST 24: Personal AI Support Assistant & Priority Escalation
+    // ========================================================
+    console.log('\n--- Running Test 24: Personal AI Support Assistant & Priority Escalation ---');
+
+    // 24a. Account-grounded billing query
+    const aiBillingChat = await request(
+      '/api/support/chat',
+      'POST',
+      {
+        message: 'What is my current bill and payment status?',
+      },
+      customerToken
+    );
+    console.log('AI Billing Chat Status:', aiBillingChat.status);
+    console.log('AI Response Snippet:', aiBillingChat.data.data?.reply?.slice(0, 150));
+    if (aiBillingChat.status !== 200 || !aiBillingChat.data.data?.reply) {
+      throw new Error('AI Customer Support Chat failed on billing inquiry');
+    }
+
+    // 24b. Optical signal troubleshooting query
+    const aiSignalChat = await request(
+      '/api/support/chat',
+      'POST',
+      {
+        message: 'What is my optical signal status and Rx power?',
+      },
+      customerToken
+    );
+    console.log('AI Optical Chat Status:', aiSignalChat.status);
+    console.log('AI Response Snippet:', aiSignalChat.data.data?.reply?.slice(0, 150));
+    if (aiSignalChat.status !== 200 || !aiSignalChat.data.data?.reply) {
+      throw new Error('AI Customer Support Chat failed on optical signal inquiry');
+    }
+
+    // 24c. Natural Language Escalation to Human / Field Engineer
+    const aiEscalationChat = await request(
+      '/api/support/chat',
+      'POST',
+      {
+        message: 'Our main optical fiber was cut by construction work outside! Please escalate immediately to a field technician.',
+      },
+      customerToken
+    );
+    console.log('AI Escalation Status:', aiEscalationChat.status);
+    console.log('AI Escalated Flag:', aiEscalationChat.data.data?.escalated);
+    console.log('AI Escalation Ticket:', aiEscalationChat.data.data?.ticketInfo);
+    if (
+      aiEscalationChat.status !== 200 ||
+      !aiEscalationChat.data.data?.escalated ||
+      !aiEscalationChat.data.data?.ticketInfo?.ticketId
+    ) {
+      throw new Error('AI Support failed to trigger automatic human technician escalation');
+    }
+
+    console.log('\n>>> ALL 24 ENTERPRISE SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {
