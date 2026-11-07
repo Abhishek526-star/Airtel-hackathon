@@ -1,5 +1,6 @@
 const Lead = require('../models/Lead');
 const KYCDocument = require('../models/KYCDocument');
+const BusinessProfile = require('../models/BusinessProfile');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const AssistanceRequest = require('../models/AssistanceRequest');
@@ -191,6 +192,64 @@ exports.updateRequestStatus = async (req, res, next) => {
           $inc: { activeAssignedLeadsCount: -1 },
         });
       }
+
+      // If this was a Smart KYC assistance request and resolved, mark customer's KYC as VERIFIED
+      if (status === 'RESOLVED' && request.requestType === 'KYC_ASSISTANCE' && request.customer) {
+        try {
+          const notes = resolutionNotes || 'Partner completed on-site physical verification of business and signatory certificates.';
+          
+          let kycDoc = null;
+          if (request.kycDocument) {
+            kycDoc = await KYCDocument.findById(request.kycDocument);
+          }
+          if (!kycDoc) {
+            kycDoc = await KYCDocument.findOne({ user: request.customer }).sort({ createdAt: -1 });
+          }
+
+          if (kycDoc) {
+            kycDoc.verificationStatus = 'VERIFIED';
+            kycDoc.partnerOverride = {
+              isOverridden: true,
+              partnerName: req.user.fullName,
+              reason: notes,
+              overrideTimestamp: new Date(),
+            };
+            await kycDoc.save();
+          }
+
+          const profile = await BusinessProfile.findOne({ user: request.customer });
+          if (profile) {
+            profile.kycStatus = 'VERIFIED';
+            profile.kycVerifiedAt = new Date();
+            profile.kycVerifiedIdentifier = request.ocrExtractedId || profile.gstin || profile.udyamNumber || 'VERIFIED-BY-PARTNER';
+            if (request.ocrExtractedId && request.ocrExtractedId.length === 15) {
+              profile.hasGstin = true;
+              profile.gstin = request.ocrExtractedId;
+            } else if (request.ocrExtractedId && request.ocrExtractedId.startsWith('UDYAM')) {
+              profile.hasUdyam = true;
+              profile.udyamNumber = request.ocrExtractedId;
+            }
+            await profile.save();
+          }
+
+          const activeOrders = await Order.find({ user: request.customer, kycStatus: { $ne: 'VERIFIED' } });
+          for (const ord of activeOrders) {
+            ord.kycStatus = 'VERIFIED';
+            if (ord.orderStatus === 'KYC_PENDING' || ord.orderStatus === 'ORDER_PLACED') {
+              ord.orderStatus = 'KYC_VERIFIED';
+            }
+            ord.timeline.push({
+              status: 'KYC_VERIFIED',
+              title: 'Smart KYC Approved by Authorized Partner',
+              description: `Partner ${req.user.fullName} (${req.user.partnerCode || 'KYC-DEL-101'}) completed physical verification on-site.`,
+              timestamp: new Date(),
+            });
+            await ord.save();
+          }
+        } catch (kycSyncErr) {
+          console.warn('[Smart KYC Partner Resolution Sync Error]', kycSyncErr.message);
+        }
+      }
     }
 
     await request.save();
@@ -199,6 +258,107 @@ exports.updateRequestStatus = async (req, res, next) => {
       success: true,
       message: `Request status updated to ${request.status}.`,
       data: request,
+      error: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Explicitly approve and physically verify Smart KYC on-site
+// @route   POST /api/partner/kyc/:id/approve
+// @access  Private (Partner / Admin)
+exports.approveKycRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { notes = 'Partner completed on-site physical inspection of original documents and signatory credentials under DPDP Act 2023.' } = req.body;
+
+    const request = await AssistanceRequest.findOne({
+      $or: [{ _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }, { requestId: id }],
+    });
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'KYC assistance request not found.',
+        data: null,
+        error: { code: 'REQUEST_NOT_FOUND' },
+      });
+    }
+
+    const previousStatus = request.status;
+    request.status = 'RESOLVED';
+    request.resolutionNotes = notes;
+    request.resolvedAt = new Date();
+    await request.save();
+
+    if (['NEW_ASSIGNED', 'ACCEPTED', 'IN_PROGRESS'].includes(previousStatus)) {
+      await User.findByIdAndUpdate(req.user._id, {
+        $inc: { activeAssignedLeadsCount: -1 },
+      });
+    }
+
+    // Update associated KYCDocument to VERIFIED
+    let kycDoc = null;
+    if (request.kycDocument) {
+      kycDoc = await KYCDocument.findById(request.kycDocument);
+    }
+    if (!kycDoc && request.customer) {
+      kycDoc = await KYCDocument.findOne({ user: request.customer }).sort({ createdAt: -1 });
+    }
+
+    if (kycDoc) {
+      kycDoc.verificationStatus = 'VERIFIED';
+      kycDoc.partnerOverride = {
+        isOverridden: true,
+        partnerName: req.user.fullName,
+        reason: notes,
+        overrideTimestamp: new Date(),
+      };
+      await kycDoc.save();
+    }
+
+    // Update BusinessProfile to VERIFIED
+    if (request.customer) {
+      const profile = await BusinessProfile.findOne({ user: request.customer });
+      if (profile) {
+        profile.kycStatus = 'VERIFIED';
+        profile.kycVerifiedAt = new Date();
+        profile.kycVerifiedIdentifier = request.ocrExtractedId || profile.gstin || profile.udyamNumber || 'VERIFIED-BY-PARTNER';
+        if (request.ocrExtractedId && request.ocrExtractedId.length === 15) {
+          profile.hasGstin = true;
+          profile.gstin = request.ocrExtractedId;
+        } else if (request.ocrExtractedId && request.ocrExtractedId.startsWith('UDYAM')) {
+          profile.hasUdyam = true;
+          profile.udyamNumber = request.ocrExtractedId;
+        }
+        await profile.save();
+      }
+
+      // Update associated Order(s)
+      const activeOrders = await Order.find({ user: request.customer, kycStatus: { $ne: 'VERIFIED' } });
+      for (const ord of activeOrders) {
+        ord.kycStatus = 'VERIFIED';
+        if (ord.orderStatus === 'KYC_PENDING' || ord.orderStatus === 'ORDER_PLACED') {
+          ord.orderStatus = 'KYC_VERIFIED';
+        }
+        ord.timeline.push({
+          status: 'KYC_VERIFIED',
+          title: 'Smart KYC Approved by Authorized Partner',
+          description: `Partner ${req.user.fullName} (${req.user.partnerCode || 'KYC-DEL-101'}) completed physical verification on-site.`,
+          timestamp: new Date(),
+        });
+        await ord.save();
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Smart KYC request for ${request.customerName} (${request.businessName}) approved and verified.`,
+      data: {
+        request,
+        kycDocument: kycDoc,
+      },
       error: null,
     });
   } catch (error) {

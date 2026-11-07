@@ -514,18 +514,103 @@ async function runTests() {
       '/api/technician/availability',
       'PATCH',
       {
-        availabilityStatus: 'ON_TASK',
+        availabilityStatus: 'AVAILABLE',
         isAvailable: true,
       },
       techToken
     );
     console.log('Availability Update HTTP:', availRes.status);
     console.log('New Availability Status:', availRes.data.data?.availabilityStatus);
-    if (availRes.status !== 200 || availRes.data.data?.availabilityStatus !== 'ON_TASK') {
+    if (availRes.status !== 200 || availRes.data.data?.availabilityStatus !== 'AVAILABLE') {
       throw new Error('Technician availability update failed');
     }
 
-    console.log('\n>>> ALL 17 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    console.log('\n--- TEST 18: Smart KYC Partner Authentication, Exception Routing & On-Site Verification ---');
+    // 18a: Authenticate as dedicated Smart KYC Partner Ananya Deshmukh
+    const kycPartnerLogin = await request('/api/auth/login', 'POST', {
+      identifier: 'kyc.partner@accel.com',
+      password: 'Password@123',
+    });
+    console.log('Smart KYC Partner Login HTTP:', kycPartnerLogin.status);
+    console.log('Partner Name:', kycPartnerLogin.data.data?.user?.fullName);
+    console.log('Partner Role:', kycPartnerLogin.data.data?.user?.role);
+    console.log('Partner Code:', kycPartnerLogin.data.data?.user?.partnerCode);
+    console.log('Territory Circle:', kycPartnerLogin.data.data?.user?.territoryCircle);
+
+    if (
+      kycPartnerLogin.status !== 200 ||
+      kycPartnerLogin.data.data?.user?.role !== 'partner' ||
+      kycPartnerLogin.data.data?.user?.partnerCode !== 'KYC-DEL-101'
+    ) {
+      throw new Error('Smart KYC partner authentication failed');
+    }
+    const kycPartnerToken = kycPartnerLogin.data.data?.token;
+
+    // 18b: Customer requests Smart KYC Partner Assisted Verification
+    const assignPartnerRes = await request(
+      '/api/kyc/assign-partner',
+      'POST',
+      {
+        documentType: 'SIGNATORY_ID',
+        notes: 'Director Signatory ID registry mismatch. Requested certified Smart KYC partner on-site visit.',
+      },
+      customerToken
+    );
+    console.log('Assign KYC Partner HTTP:', assignPartnerRes.status);
+    console.log('Assigned Partner Name:', assignPartnerRes.data.data?.assignedPartner?.name);
+    console.log('Assigned Partner Code:', assignPartnerRes.data.data?.assignedPartner?.partnerCode);
+    console.log('Request ID:', assignPartnerRes.data.data?.request?.requestId);
+
+    if (
+      assignPartnerRes.status !== 200 ||
+      !assignPartnerRes.data.data?.assignedPartner ||
+      assignPartnerRes.data.data?.assignedPartner?.partnerCode !== 'KYC-DEL-101'
+    ) {
+      throw new Error('Smart KYC partner dynamic assignment failed');
+    }
+    const kycAssistanceRequestId = assignPartnerRes.data.data?.request?.requestId;
+
+    // 18c: Smart KYC Partner inspects assigned requests inbox
+    const partnerInboxRes = await request('/api/partner/my-requests', 'GET', null, kycPartnerToken);
+    console.log('Partner Inbox HTTP:', partnerInboxRes.status);
+    console.log('Partner Requests Count:', partnerInboxRes.data.data?.requests?.length);
+    const foundKycReq = partnerInboxRes.data.data?.requests?.find(
+      (r) => r.requestId === kycAssistanceRequestId
+    );
+    console.log('Found Assigned KYC Request in Inbox:', Boolean(foundKycReq));
+    if (partnerInboxRes.status !== 200 || !foundKycReq) {
+      throw new Error('Assigned Smart KYC request not found in partner inbox');
+    }
+
+    // 18d: Smart KYC Partner approves & physically verifies KYC on-site
+    const approveKycRes = await request(
+      `/api/partner/kyc/${kycAssistanceRequestId}/approve`,
+      'POST',
+      {
+        notes: 'Physically inspected original partnership deed and director Aadhaar/PAN at premises under DPDP Act 2023.',
+      },
+      kycPartnerToken
+    );
+    console.log('Approve KYC HTTP:', approveKycRes.status);
+    console.log('Request Status after Approval:', approveKycRes.data.data?.request?.status);
+    if (approveKycRes.status !== 200 || approveKycRes.data.data?.request?.status !== 'RESOLVED') {
+      throw new Error('Partner assisted KYC approval failed');
+    }
+
+    // 18e: Verify Customer KYC state is now fully VERIFIED
+    const customerKycCheck = await request('/api/kyc/status', 'GET', null, customerToken);
+    console.log('Customer KYC Check HTTP:', customerKycCheck.status);
+    console.log('Overall KYC Status:', customerKycCheck.data.data?.overallStatus);
+    console.log('KYC Verified At:', customerKycCheck.data.data?.kycVerifiedAt);
+
+    if (
+      customerKycCheck.status !== 200 ||
+      customerKycCheck.data.data?.overallStatus !== 'VERIFIED'
+    ) {
+      throw new Error('Customer KYC status was not updated to VERIFIED after partner approval');
+    }
+
+    console.log('\n>>> ALL 18 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {

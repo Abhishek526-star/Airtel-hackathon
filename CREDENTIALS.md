@@ -18,6 +18,9 @@
 | **Sales Channel Partner** | **Rohit Deshmukh**<br>(Mumbai West Telecom Agency) | `rohit.mumbai@accel.com` | `9820011223` | `Password@123` | **Mumbai Metro**<br>(*Code: `CP-MUM-201`*) | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
 | **Sales Channel Partner** | **Karthik Reddy**<br>(Silicon City Enterprise Net) | `karthik.blr@accel.com` | `9845011224` | `Password@123` | **Bengaluru Urban**<br>(*Code: `CP-BLR-301`*) | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
 | **Sales Channel Partner** | **Sachin Patil**<br>(Pune Metro Digital Connect) | `sachin.pune@accel.com` | `9850011225` | `Password@123` | **Pune Hub**<br>(*Code: `CP-PUN-401`*) | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
+| **Smart KYC Partner** | **Ananya Deshmukh**<br>(Airtel SmartKYC Agency) | `kyc.partner@accel.com` | `9871122338` | `Password@123` | **Delhi NCR**<br>(*Code: `KYC-DEL-101`*) | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
+| **Smart KYC Partner** | **Rohan Joshi**<br>(Mumbai Metro SmartKYC) | `kyc.mumbai@accel.com` | `9820033445` | `Password@123` | **Mumbai Metro**<br>(*Code: `KYC-MUM-201`*) | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
+| **Smart KYC Partner** | **Kavitha Swamy**<br>(Bengaluru Digital KYC Hub) | `kyc.blr@accel.com` | `9845044556` | `Password@123` | **Bengaluru Urban**<br>(*Code: `KYC-BLR-301`*) | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
 | **Field Technician** | **Ramesh Kumar**<br>(Airtel Enterprise Field Engineer) | `tech.ramesh@accel.com` | `9811054321` | `Password@123` | **Delhi NCR**<br>(*Badge: `ENG-DELHI-408`*) | [Field Tasks (`/technician`)](http://localhost:5173/technician) |
 | **Field Technician** | **Suresh Patil**<br>(Airtel Enterprise Field Engineer) | `tech.suresh@accel.com` | `9820054321` | `Password@123` | **Mumbai Metro**<br>(*Badge: `ENG-MUM-502`*) | [Field Tasks (`/technician`)](http://localhost:5173/technician) |
 | **Field Technician** | **Ganesh Iyer**<br>(Airtel Enterprise Field Engineer) | `tech.blr@accel.com` | `9845054321` | `Password@123` | **Bengaluru Urban**<br>(*Badge: `ENG-BLR-603`*) | [Field Tasks (`/technician`)](http://localhost:5173/technician) |
@@ -98,7 +101,44 @@ Empowers local telecom franchise agents and field executives with lead pipelines
 
 ---
 
-### 2.3 Enterprise Field Technicians (Optical CPE & Line Engineers)
+### 2.3 Smart KYC Verification Partners (Assisted On-Site KYC & DPDP Compliance)
+Empowers certified compliance agents to receive Smart KYC review exceptions (trade name mismatches, blurry certificates, non-standard documentation), perform on-site physical document inspections, and grant statutory verification overrides under DPDP Act 2023.
+
+#### 1. Delhi NCR Circle:
+- **Lead Smart KYC Partner:** Ananya Deshmukh
+  - **Email / User ID:** `kyc.partner@accel.com`
+  - **Phone / User ID:** `9871122338`
+  - **Password:** `Password@123`
+  - **Partner Code:** `KYC-DEL-101`
+  - **Agency Name:** Airtel SmartKYC Assisted Onboarding Agency
+  - **Operational Circle:** Delhi NCR
+  - **Specialization:** Smart KYC On-Site Verification & DPDP Compliance
+
+#### 2. Mumbai Metro Circle:
+- **Smart KYC Partner:** Rohan Joshi
+  - **Email / User ID:** `kyc.mumbai@accel.com`
+  - **Phone / User ID:** `9820033445`
+  - **Password:** `Password@123`
+  - **Partner Code:** `KYC-MUM-201`
+  - **Agency Name:** Mumbai Metro SmartKYC Agency
+  - **Operational Circle:** Mumbai Metro
+
+#### 3. Bengaluru Urban Circle:
+- **Smart KYC Partner:** Kavitha Swamy
+  - **Email / User ID:** `kyc.blr@accel.com`
+  - **Phone / User ID:** `9845044556`
+  - **Password:** `Password@123`
+  - **Partner Code:** `KYC-BLR-301`
+  - **Agency Name:** Bengaluru Digital KYC Hub
+  - **Operational Circle:** Bengaluru Urban
+
+**Key Smart KYC Partner Features Accessible:**
+- [Partner Portal (`/partner`)](http://localhost:5173/partner) — Incoming Smart KYC review requests with OCR extracted data and discrepancy flags, click-to-call merchant, and 1-click **"Approve & Verify Smart KYC"** on-site physical override.
+- [Partner Profile (`/profile`)](http://localhost:5173/profile) — Partner Code badge, assigned circle, active assigned requests counter, and live availability toggle.
+
+---
+
+### 2.4 Enterprise Field Technicians (Optical CPE & Line Engineers)
 Empowers certified on-site field engineers to receive installation work orders, inspect commercial premises, terminate optical fiber drop cables, calibrate optical power levels, bind Nokia/Huawei ONT CPE hardware, and trigger live circuit activation.
 
 #### 1. Delhi NCR Circle:
@@ -134,7 +174,7 @@ Empowers certified on-site field engineers to receive installation work orders, 
 
 ---
 
-### 2.4 Executive Administration
+### 2.5 Executive Administration
 Designed for telecom leadership and digital acquisition heads to monitor national acquisition economics and circle conversion funnels.
 
 - **Lead Executive:** Priya Nair (Head of SME Growth & Digital Acquisition)
@@ -208,5 +248,17 @@ In addition to pre-configured accounts, you can register new accounts with dedic
 6. Click **"Start On-Site Installation"** to move the task to `INSTALLATION_IN_PROGRESS`.
 7. Click **"Launch Optical Diagnostics & Activate"**, inspect the simulated optical power meter (`-19.2 dBm`), verify ONT Serial (`ONT-NOKIA-XS-XXXX`), and click **"Confirm Live Activation"**.
 8. Sign back in as the customer: the order tracker shows `ACTIVATED`, and the new line appears instantly under **Active Services** in **My Business (`/dashboard`)**.
+
+### Scenario E: Testing Smart KYC Partner Assignment & On-Site Verification
+1. Sign in as an MSME Customer or register a new account on `/register`.
+2. Navigate to **Smart KYC (`/kyc`)**. In the test records table, click on **Director Signatory ID (Registry Name Mismatch)** with ID `MISMATCH-PAN-889`.
+3. The automated OCR cross-check detects a discrepancy and flags the document as **`NEEDS_REVIEW`**.
+4. The system dynamically dispatches the request to **Ananya Deshmukh** (`KYC-DEL-101`), the certified Smart KYC Partner for Delhi NCR.
+5. The customer's screen immediately renders the **Assigned Smart KYC Partner Card** with Ananya's name, partner code, agency, and direct call button (`+91 9871122338`).
+6. Sign out and sign in as **Ananya Deshmukh** (`kyc.partner@accel.com` / `Password@123`).
+7. Open **Partner Workspace (`/partner`)**: the new request appears under **Assigned Customer Requests** tagged with the **Smart KYC Review Flag** and discrepancy notes.
+8. Click **"Approve & Verify Smart KYC"**, review the physical inspection note, and confirm approval.
+9. Sign back in as the customer: their `/kyc` page, business profile, and pending orders are now fully **VERIFIED**, enabling immediate order progression!
+
 
 

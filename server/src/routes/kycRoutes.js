@@ -7,6 +7,7 @@ const upload = require('../middleware/upload');
 router.use(authenticate);
 router.post('/consent', kycController.submitConsent);
 router.post('/upload', upload.single('document'), kycController.uploadDocument);
+router.post('/assign-partner', kycController.assignPartner);
 router.get('/status', kycController.getStatus);
 
 module.exports = router;

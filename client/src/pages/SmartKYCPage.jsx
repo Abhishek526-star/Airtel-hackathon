@@ -22,7 +22,10 @@ import {
   FileCheck2,
   LayoutDashboard,
   Calendar,
-  Check
+  Check,
+  UserCheck,
+  Phone,
+  MapPin
 } from 'lucide-react';
 
 const SmartKYCPage = () => {
@@ -561,6 +564,69 @@ const SmartKYCPage = () => {
                     </div>
                     <div className="text-slate-500 text-[11px]">
                       Registered Address: {uploadResult.registryValidation.matchedRecord.address || uploadResult.registryValidation.matchedRecord.city}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assigned Smart KYC Partner Card */}
+                {(uploadResult.assignedPartner || existingKyc?.assignedPartner) && uploadResult.verificationStatus !== 'VERIFIED' && (
+                  <div className="p-4 rounded-2xl bg-white border border-amber-200/90 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                          <UserCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">
+                            Assigned Smart KYC Verification Partner
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            Authorized Airtel field agent dispatched for physical document verification
+                          </div>
+                        </div>
+                      </div>
+                      <Badge variant="warning">
+                        {uploadResult.assignedPartner?.partnerCode || existingKyc?.assignedPartner?.partnerCode || 'KYC-DEL-101'}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Assigned Agent</span>
+                        <span className="font-bold text-slate-800 text-xs">
+                          {uploadResult.assignedPartner?.name || existingKyc?.assignedPartner?.name}
+                        </span>
+                        <span className="text-[11px] text-slate-500 block truncate">
+                          {uploadResult.assignedPartner?.agencyName || existingKyc?.assignedPartner?.agencyName}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Operational Circle</span>
+                        <span className="font-semibold text-slate-700 flex items-center space-x-1">
+                          <MapPin className="w-3 h-3 text-red-500" />
+                          <span>{uploadResult.assignedPartner?.territoryCircle || existingKyc?.assignedPartner?.territoryCircle || 'Delhi NCR'}</span>
+                        </span>
+                        <span className="text-[11px] text-emerald-700 font-semibold block">
+                          🟢 Assigned & Available in Circle
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 border-t border-slate-100">
+                      <span className="text-[11px] text-slate-500">
+                        {uploadResult.assistanceRequestId ? (
+                          <>Request ID: <strong className="font-mono text-slate-700">{uploadResult.assistanceRequestId}</strong></>
+                        ) : (
+                          <span>Compliant with DPDP Act 2023 Digital Onboarding</span>
+                        )}
+                      </span>
+                      <a
+                        href={`tel:${uploadResult.assignedPartner?.phone || existingKyc?.assignedPartner?.phone || '9871122338'}`}
+                        className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition self-start sm:self-auto"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Call Agent: {uploadResult.assignedPartner?.phone || existingKyc?.assignedPartner?.phone}</span>
+                      </a>
                     </div>
                   </div>
                 )}

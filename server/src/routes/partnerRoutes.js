@@ -18,6 +18,7 @@ router.patch('/availability', partnerController.updateAvailability);
 // Partner assigned incoming customer assistance requests
 router.get('/my-requests', partnerController.getMyRequests);
 router.patch('/my-requests/:id/status', partnerController.updateRequestStatus);
+router.post('/kyc/:id/approve', partnerController.approveKycRequest);
 
 // Historic / Cohort Unclosed Leads Pipeline
 router.get('/leads', partnerController.getAssignedLeads);

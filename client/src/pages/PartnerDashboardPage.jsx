@@ -63,6 +63,12 @@ const PartnerDashboardPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('propensity'); // 'propensity' | 'recent'
 
+  // Smart KYC Request Approval Modal State
+  const [selectedKycReq, setSelectedKycReq] = useState(null);
+  const [kycApproveModalOpen, setKycApproveModalOpen] = useState(false);
+  const [kycNotes, setKycNotes] = useState('Partner conducted physical on-site inspection of original statutory documents and verified signatory identity under DPDP Act 2023.');
+  const [isApprovingKyc, setIsApprovingKyc] = useState(false);
+
   useEffect(() => {
     fetchPartnerStatus();
     fetchAssignedRequests();
@@ -137,6 +143,32 @@ const PartnerDashboardPage = () => {
       }
     } catch (err) {
       alert(`Failed to update request: ${err.message}`);
+    }
+  };
+
+  const openKycApproveModal = (req) => {
+    setSelectedKycReq(req);
+    setKycNotes(`Partner ${user?.fullName || 'Agent'} conducted physical on-site inspection for ${req.businessName || req.customerName}. Original documents verified under DPDP Act 2023.`);
+    setKycApproveModalOpen(true);
+  };
+
+  const handleApproveKyc = async () => {
+    if (!selectedKycReq) return;
+    try {
+      setIsApprovingKyc(true);
+      const res = await api.post(`/partner/kyc/${selectedKycReq._id || selectedKycReq.requestId}/approve`, {
+        notes: kycNotes,
+      });
+      if (res.success) {
+        setKycApproveModalOpen(false);
+        setSelectedKycReq(null);
+        await fetchAssignedRequests();
+        await fetchPartnerStatus();
+      }
+    } catch (err) {
+      alert(`KYC Approval Error: ${err.message}`);
+    } finally {
+      setIsApprovingKyc(false);
     }
   };
 
@@ -364,6 +396,26 @@ const PartnerDashboardPage = () => {
                         </div>
                       </div>
 
+                      {/* Smart KYC Review Details (if KYC request) */}
+                      {req.requestType === 'KYC_ASSISTANCE' && (
+                        <div className="p-2.5 rounded-xl bg-amber-50/90 border border-amber-200/80 text-xs text-amber-900 space-y-1">
+                          <div className="flex items-center space-x-1 font-bold text-[11px] text-amber-800">
+                            <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Smart KYC Review Flag</span>
+                          </div>
+                          {req.documentType && (
+                            <div className="text-[11px] text-amber-800">
+                              Document: <strong>{req.documentType.replace('_', ' ')}</strong> {req.ocrExtractedId && `(${req.ocrExtractedId})`}
+                            </div>
+                          )}
+                          {req.verificationIssue && (
+                            <p className="text-[10px] text-amber-700 italic">
+                              "{req.verificationIssue}"
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700 space-y-1">
                         <div className="text-[10px] uppercase font-bold text-slate-400">
                           {req.requestType.replace('_', ' ')}
@@ -396,7 +448,18 @@ const PartnerDashboardPage = () => {
                         )}
                       </div>
 
-                      {req.status !== 'RESOLVED' && (
+                      {req.requestType === 'KYC_ASSISTANCE' && req.status !== 'RESOLVED' && (
+                        <button
+                          type="button"
+                          onClick={() => openKycApproveModal(req)}
+                          className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all text-center flex items-center justify-center space-x-1.5 shadow-sm shadow-emerald-500/20"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>Approve & Verify Smart KYC</span>
+                        </button>
+                      )}
+
+                      {req.status !== 'RESOLVED' && req.requestType !== 'KYC_ASSISTANCE' && (
                         <button
                           type="button"
                           onClick={() => handleUpdateRequestStatus(req._id || req.requestId, 'RESOLVED')}
@@ -687,6 +750,75 @@ const PartnerDashboardPage = () => {
                 onClick={handleOverrideKYC}
               >
                 {t('partner.approveUnblockBtn', 'Approve & Unblock Lead')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Smart KYC On-Site Assisted Verification Modal */}
+      {kycApproveModalOpen && selectedKycReq && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <div className="flex items-center space-x-2 text-slate-900">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">Approve & Verify Smart KYC (On-Site)</h3>
+                <p className="text-xs text-slate-500">Request: <strong className="font-mono">{selectedKycReq.requestId}</strong> &bull; {selectedKycReq.businessName}</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-semibold">Customer:</span>
+                <span className="font-bold text-slate-800">{selectedKycReq.customerName} ({selectedKycReq.customerPhone})</span>
+              </div>
+              {selectedKycReq.documentType && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500 font-semibold">Document:</span>
+                  <span className="font-mono font-bold text-slate-800">{selectedKycReq.documentType} ({selectedKycReq.ocrExtractedId || 'N/A'})</span>
+                </div>
+              )}
+              {selectedKycReq.verificationIssue && (
+                <div className="text-[11px] text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                  <strong>OCR Flag:</strong> {selectedKycReq.verificationIssue}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Partner Physical Verification Certificate & Note:
+              </label>
+              <textarea
+                rows="3"
+                value={kycNotes}
+                onChange={(e) => setKycNotes(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">
+                Submitting this approval will cryptographically certify the customer under DPDP Act 2023 and advance their onboarding to Verified.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setKycApproveModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                isLoading={isApprovingKyc}
+                onClick={handleApproveKyc}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                Confirm Physical KYC Approval
               </Button>
             </div>
           </div>
