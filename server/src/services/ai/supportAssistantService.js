@@ -360,3 +360,4 @@ Respond in clean, friendly GitHub-style markdown. Use bullet points for structur
 }
 
 module.exports = new SupportAssistantService();
+

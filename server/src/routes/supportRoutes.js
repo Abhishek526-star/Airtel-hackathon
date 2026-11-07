@@ -7,3 +7,4 @@ router.post('/chat', optionalAuth, supportController.chat);
 router.post('/escalate', optionalAuth, supportController.escalate);
 
 module.exports = router;
+

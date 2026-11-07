@@ -74,3 +74,4 @@ const paymentTransactionSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model('PaymentTransaction', paymentTransactionSchema);
+

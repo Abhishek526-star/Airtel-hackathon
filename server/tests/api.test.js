@@ -894,7 +894,137 @@ async function runTests() {
       throw new Error('AI Support failed to trigger automatic human technician escalation');
     }
 
-    console.log('\n>>> ALL 24 ENTERPRISE SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    // ========================================================
+    // TEST 25: Smart KYC Partner RBAC & Circle Scoping Validation
+    // ========================================================
+    console.log('\n--- Running Test 25: Smart KYC Partner RBAC & Circle Scoping Validation ---');
+
+    const pipeKycLogin = await request('/api/auth/login', 'POST', {
+      identifier: 'kyc.partner@accel.com',
+      password: 'Password@123',
+    });
+    console.log('Delhi KYC Partner Login Status:', pipeKycLogin.status);
+    const pipeKycToken = pipeKycLogin.data.data.token;
+
+    const mumPartnerLogin = await request('/api/auth/login', 'POST', {
+      identifier: 'rohit.mumbai@accel.com',
+      password: 'Password@123',
+    });
+    console.log('Mumbai Partner Login Status:', mumPartnerLogin.status);
+    const mumPartnerToken = mumPartnerLogin.data.data.token;
+
+    // Fetch leads with pagination & circle scoping
+    const partnerLeadsRes = await request('/api/partner/leads?page=1&limit=6', 'GET', null, pipeKycToken);
+    console.log('Partner Leads Query Status:', partnerLeadsRes.status);
+    console.log('Total Pool Leads:', partnerLeadsRes.data.data?.totalCount, 'Returned:', partnerLeadsRes.data.data?.leads?.length);
+    if (partnerLeadsRes.status !== 200 || !partnerLeadsRes.data.data?.leads?.length) {
+      throw new Error('Partner lead query failed or returned empty list');
+    }
+
+    const authorizedLead = partnerLeadsRes.data.data.leads[0];
+
+    // Ensure a Mumbai lead exists assigned to Mumbai partner
+    const LeadModel = require('../src/models/Lead');
+    const mumbaiLead = await LeadModel.findOneAndUpdate(
+      { city: /Mumbai/i },
+      { assignedPartnerCode: 'CP-MUM-201', assignedPartner: 'Rohit Deshmukh' },
+      { new: true }
+    );
+
+    if (mumbaiLead) {
+      // Delhi partner attempting to access Mumbai lead should be rejected with 403 Forbidden
+      const unauthorizedAccess = await request(`/api/partner/leads/${mumbaiLead.leadId}/customer-details`, 'GET', null, pipeKycToken);
+      console.log('Cross-Circle Unauthorized Access Status:', unauthorizedAccess.status, unauthorizedAccess.data.error?.code);
+      if (unauthorizedAccess.status !== 403 || unauthorizedAccess.data.error?.code !== 'UNAUTHORIZED_LEAD_ACCESS') {
+        throw new Error('RBAC violation: Unauthorized partner was not blocked with 403');
+      }
+
+      // Mumbai partner accessing own circle lead should succeed with 200 OK
+      const authorizedMumAccess = await request(`/api/partner/leads/${mumbaiLead.leadId}/customer-details`, 'GET', null, mumPartnerToken);
+      console.log('Authorized In-Circle Partner Access Status:', authorizedMumAccess.status);
+      if (authorizedMumAccess.status !== 200) {
+        throw new Error('Authorized Mumbai partner was incorrectly blocked');
+      }
+    }
+
+    // ========================================================
+    // TEST 26: Comprehensive Customer Information Retrieval
+    // ========================================================
+    console.log('\n--- Running Test 26: Comprehensive Customer Information Retrieval ---');
+
+    const customerDossier = await request(`/api/partner/leads/${authorizedLead.leadId}/customer-details`, 'GET', null, pipeKycToken);
+    console.log('Customer Dossier Status:', customerDossier.status);
+    console.log('Business Profile Trade Name:', customerDossier.data.data?.businessProfile?.tradeName);
+    console.log('Contact Person:', customerDossier.data.data?.contactInfo?.contactPerson);
+    console.log('KYC Documents Count:', customerDossier.data.data?.kycDocuments?.length);
+    console.log('Orders Count:', customerDossier.data.data?.orders?.length);
+    console.log('Invoices Count:', customerDossier.data.data?.invoices?.length);
+    console.log('Audit Log Count:', customerDossier.data.data?.lead?.accessAuditLog?.length);
+
+    if (
+      customerDossier.status !== 200 ||
+      !customerDossier.data.data?.businessProfile ||
+      !customerDossier.data.data?.kycDocuments?.length ||
+      !customerDossier.data.data?.lead?.accessAuditLog?.length
+    ) {
+      throw new Error('Comprehensive customer information retrieval failed');
+    }
+
+    // ========================================================
+    // TEST 27: Document Secure Preview with DPDP Act & Audit Log
+    // ========================================================
+    console.log('\n--- Running Test 27: Document Secure Preview with DPDP Act Compliance ---');
+
+    const previewDoc = customerDossier.data.data.kycDocuments[0];
+    const previewRes = await request(
+      `/api/partner/leads/${authorizedLead.leadId}/documents/${previewDoc.id}/preview`,
+      'GET',
+      null,
+      pipeKycToken
+    );
+    console.log('Document Secure Preview Status:', previewRes.status);
+    console.log('Preview Document Title:', previewRes.data.data?.documentTitle);
+    console.log('Preview Watermark:', previewRes.data.data?.watermark);
+    console.log('Cryptographic Security Hash:', previewRes.data.data?.securityHash);
+
+    if (
+      previewRes.status !== 200 ||
+      !previewRes.data.data?.documentTitle ||
+      !previewRes.data.data?.securityHash ||
+      !previewRes.data.data?.watermark?.includes('DPDP ACT 2023')
+    ) {
+      throw new Error('Secure document preview failed or missing DPDP compliance seal');
+    }
+
+    // ========================================================
+    // TEST 28: Lead Recovery Action Recording & Timeline Updates
+    // ========================================================
+    console.log('\n--- Running Test 28: Lead Recovery Action Recording & Timeline Updates ---');
+
+    const recoveryActionRes = await request(
+      `/api/partner/leads/${authorizedLead.leadId}/recovery-action`,
+      'POST',
+      {
+        actionType: 'PHYSICAL_SITE_VISIT',
+        remarks: 'Partner completed in-person inspection of business premises, verified statutory credentials and electricity bill.',
+        newStatus: 'IN_PROGRESS',
+        pendingRequirements: ['Awaiting landlord lease deed upload'],
+      },
+      pipeKycToken
+    );
+    console.log('Recovery Action Recording Status:', recoveryActionRes.status);
+    console.log('Updated Recovery Status:', recoveryActionRes.data.data?.recoveryStatus);
+    console.log('Latest Action Type:', recoveryActionRes.data.data?.latestAction?.actionType);
+
+    if (
+      recoveryActionRes.status !== 200 ||
+      recoveryActionRes.data.data?.recoveryStatus !== 'IN_PROGRESS' ||
+      recoveryActionRes.data.data?.latestAction?.actionType !== 'PHYSICAL_SITE_VISIT'
+    ) {
+      throw new Error('Lead recovery action recording failed');
+    }
+
+    console.log('\n>>> ALL 28 ENTERPRISE SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {

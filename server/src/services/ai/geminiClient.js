@@ -171,3 +171,4 @@ Return strictly valid JSON matching this schema:
 }
 
 module.exports = new GeminiClient();
+

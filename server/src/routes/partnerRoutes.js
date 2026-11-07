@@ -20,9 +20,12 @@ router.get('/my-requests', partnerController.getMyRequests);
 router.patch('/my-requests/:id/status', partnerController.updateRequestStatus);
 router.post('/kyc/:id/approve', partnerController.approveKycRequest);
 
-// Historic / Cohort Unclosed Leads Pipeline
+// Historic / Cohort Unclosed Leads Pipeline & Smart KYC Partner Recovery
 router.get('/leads', partnerController.getAssignedLeads);
 router.get('/leads/:id', partnerController.getLeadDetails);
+router.get('/leads/:id/customer-details', partnerController.getLeadCustomerDetails);
+router.get('/leads/:id/documents/:docId/preview', partnerController.getSecureDocumentPreview);
+router.post('/leads/:id/recovery-action', partnerController.recordRecoveryAction);
 router.post('/leads/:id/assist-kyc', partnerController.assistKyc);
 
 module.exports = router;
