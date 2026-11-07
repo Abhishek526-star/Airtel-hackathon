@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const AssistanceRequest = require('../models/AssistanceRequest');
 const kycService = require('../services/kyc/kycService');
+const { emitKycStatusUpdated, emitKycExceptionAssigned, emitPartnerAssistanceRequested, emitOrderStatusUpdated } = require('../socket');
 
 // Helper: Dynamically match & assign a certified Smart KYC Partner
 const assignKycPartnerForCustomer = async (user, profile, kycDoc, issueNotes, docType, extractedId) => {
@@ -98,6 +99,10 @@ const assignKycPartnerForCustomer = async (user, profile, kycDoc, issueNotes, do
       kycDoc.assistanceRequestId = requestId;
       await kycDoc.save();
     }
+
+    // Real-Time Notification to Partner & Admin
+    emitKycExceptionAssigned(request);
+    emitPartnerAssistanceRequested(request);
 
     return { request, partnerDetails };
   } catch (err) {
@@ -247,6 +252,16 @@ exports.uploadDocument = async (req, res, next) => {
         assignedPartnerInfo = assignment.partnerDetails;
       }
     }
+
+    // Real-Time Notification to Customer, Admin, and Partner
+    emitKycStatusUpdated({
+      userId: req.user._id.toString(),
+      kycStatus: verification.verificationStatus,
+      documentType: activeDocType,
+      verifiedIdentifier: activeId,
+      verifiedAt: new Date().toISOString(),
+      message: verification.verificationNotes,
+    });
 
     res.status(200).json({
       success: true,

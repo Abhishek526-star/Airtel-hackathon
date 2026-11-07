@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '../context/OnboardingContext';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
+import { useRealtimeEvent } from '../context/SocketContext';
 import api from '../services/api';
 import Stepper from '../components/common/Stepper';
 import Button from '../components/common/Button';
@@ -95,6 +96,24 @@ const SmartKYCPage = () => {
       isMounted = false;
     };
   }, [user]);
+
+  // Real-Time Listener: Instant KYC Approval Sync
+  useRealtimeEvent('KYC_STATUS_UPDATED', (payload) => {
+    if (payload.kycStatus === 'VERIFIED') {
+      setExistingKyc((prev) => ({ ...(prev || {}), overallStatus: 'VERIFIED' }));
+      setConsentChecked(true);
+      setKycData({
+        consentGiven: true,
+        verificationStatus: 'VERIFIED',
+        extractedId: payload.verifiedIdentifier || 'REGISTRY-VERIFIED',
+        notes: payload.message || 'Smart KYC Verified in Real Time',
+      });
+      setUploadResult({
+        verificationStatus: 'VERIFIED',
+        verificationNotes: payload.message || 'Smart KYC verified and approved on-site by authorized partner.',
+      });
+    }
+  });
 
   const handleConsentSubmit = async () => {
     try {

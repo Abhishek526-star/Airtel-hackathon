@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { OnboardingProvider } from './context/OnboardingContext';
+import { SocketProvider } from './context/SocketContext';
 
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
@@ -121,9 +122,11 @@ function App() {
     <Router>
       <LanguageProvider>
         <AuthProvider>
-          <OnboardingProvider>
-            <AppContent />
-          </OnboardingProvider>
+          <SocketProvider>
+            <OnboardingProvider>
+              <AppContent />
+            </OnboardingProvider>
+          </SocketProvider>
         </AuthProvider>
       </LanguageProvider>
     </Router>

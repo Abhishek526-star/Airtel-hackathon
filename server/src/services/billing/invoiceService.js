@@ -120,7 +120,7 @@ class InvoiceService {
 
     // Brand Name & Title
     doc.fillColor('#FFFFFF').fontSize(16).font('Helvetica-Bold').text('ACCEL TELECOM LIMITED', 58, 52);
-    doc.fontSize(8).font('Helvetica').fillColor('#94A3B8').text('B2B Enterprise Services • Airtel SYNC Hackathon 2026 Track A', 58, 72);
+    doc.fontSize(8).font('Helvetica').fillColor('#94A3B8').text('B2B Enterprise Services • Airtel Business & Project Udyam Digital', 58, 72);
     doc.fontSize(7).fillColor('#CBD5E1').text('DoT License: DL-B2B-DOT-2024-9912 | Corporate Identity: U64200DL2024PLC001234', 58, 84);
 
     // Tax Invoice Badge
@@ -268,7 +268,7 @@ class InvoiceService {
 
     // Bottom Watermark
     doc.fontSize(6.5).fillColor('#94A3B8').text(
-      'Project Udyam Digital — Airtel SYNC Hackathon 2026 Enterprise Track A Prototype. Computer-generated tax invoice.',
+      'Accel Business Enterprise Gateway — B2B Telecom & Digital Services. Computer-generated official tax invoice under Section 31 of CGST Act 2017.',
       40,
       y + 60,
       { align: 'center', width: 515 }

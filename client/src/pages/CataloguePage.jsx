@@ -15,7 +15,7 @@ import {
 
 const CataloguePage = () => {
   const navigate = useNavigate();
-  const { addItemToCart, cartItems } = useOnboarding();
+  const { addItemToCart, cartItems, isIncrementalPurchase, startIncrementalPurchase } = useOnboarding();
   const { t } = useTranslation();
 
   const [products, setProducts] = useState([]);
@@ -25,12 +25,28 @@ const CataloguePage = () => {
   const [gstinOnly, setGstinOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [addedItemMap, setAddedItemMap] = useState({});
+  const [activeProductIds, setActiveProductIds] = useState(new Set());
 
   const categories = ['Broadband', 'Voice/Mobile', 'Cloud', 'Security', 'IoT'];
 
   useEffect(() => {
     fetchProducts();
+    fetchActiveSubscriptions();
   }, [selectedCategory, cityTier, gstinOnly]);
+
+  const fetchActiveSubscriptions = async () => {
+    try {
+      const token = localStorage.getItem('udyam_token');
+      if (!token) return;
+      const res = await api.get('/services/active');
+      if (res.success && res.data?.services) {
+        const idSet = new Set(res.data.services.map((s) => s.productId).filter(Boolean));
+        setActiveProductIds(idSet);
+      }
+    } catch (err) {
+      // Guest or error
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -53,7 +69,12 @@ const CataloguePage = () => {
   };
 
   const handleAddProduct = (product) => {
-    addItemToCart(product.productId);
+    // If user has existing subscriptions and hasn't started incremental flow, start clean incremental cart
+    if (activeProductIds.size > 0 && !isIncrementalPurchase && cartItems.length > 0 && cartItems.some(i => i.productId === 'P01')) {
+      startIncrementalPurchase(product.productId);
+    } else {
+      addItemToCart(product.productId);
+    }
     setAddedItemMap((prev) => ({ ...prev, [product.productId]: true }));
     setTimeout(() => {
       setAddedItemMap((prev) => ({ ...prev, [product.productId]: false }));
@@ -173,16 +194,22 @@ const CataloguePage = () => {
             {products.map((prod) => {
               const isAdded = addedItemMap[prod.productId];
               const isInCart = cartItems.some((i) => i.productId === prod.productId);
+              const isAlreadyActive = activeProductIds.has(prod.productId);
 
               return (
                 <div
                   key={prod.productId}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col justify-between hover:shadow-md transition-shadow relative"
+                  className={`bg-white rounded-2xl border ${isAlreadyActive ? 'border-emerald-200 ring-1 ring-emerald-500/10' : 'border-slate-200'} shadow-sm p-5 flex flex-col justify-between hover:shadow-md transition-shadow relative`}
                 >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <Badge variant="neutral" className="text-[10px] font-mono">{prod.productId}</Badge>
-                      <Badge variant="brand">{prod.category}</Badge>
+                      <div className="flex items-center space-x-1">
+                        {isAlreadyActive && (
+                          <Badge variant="success" className="text-[10px]">Active on Account</Badge>
+                        )}
+                        <Badge variant="brand">{prod.category}</Badge>
+                      </div>
                     </div>
 
                     <h3 className="font-bold text-sm text-slate-900 leading-snug">{prod.productName}</h3>
@@ -208,7 +235,11 @@ const CataloguePage = () => {
                         <span className="text-[10px] font-normal text-slate-500">/mo</span>
                       </div>
                       <div className="text-[10px] text-slate-400">
-                        Setup: ₹{prod.setupFee.toLocaleString('en-IN')}
+                        {isAlreadyActive || activeProductIds.size > 0
+                          ? 'Zero Additional Setup'
+                          : prod.setupFee > 0
+                          ? 'Setup: ₹1,000 (One-Time)'
+                          : 'Zero Setup Fee'}
                       </div>
                     </div>
 
@@ -231,6 +262,11 @@ const CataloguePage = () => {
                         <>
                           <Plus className="w-3.5 h-3.5" />
                           <span>{t('catalogue.addMore', 'Add More')}</span>
+                        </>
+                      ) : isAlreadyActive ? (
+                        <>
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add Extra Site</span>
                         </>
                       ) : (
                         <>

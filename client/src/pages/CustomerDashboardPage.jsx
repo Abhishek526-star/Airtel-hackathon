@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
+import { useRealtimeEvent } from '../context/SocketContext';
+import { useOnboarding } from '../context/OnboardingContext';
 import api from '../services/api';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
@@ -31,8 +33,10 @@ import {
 import RequestAssistanceModal from '../components/partner/RequestAssistanceModal';
 
 const CustomerDashboardPage = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { startIncrementalPurchase } = useOnboarding();
   
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +44,7 @@ const CustomerDashboardPage = () => {
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isAssistanceModalOpen, setIsAssistanceModalOpen] = useState(false);
+  const [liveToast, setLiveToast] = useState('');
 
   // Active Services Hub State
   const [activeServices, setActiveServices] = useState([]);
@@ -55,6 +60,32 @@ const CustomerDashboardPage = () => {
 
   const [slaService, setSlaService] = useState(null);
   const [isSlaModalOpen, setIsSlaModalOpen] = useState(false);
+
+  // Real-Time Event Listeners
+  useRealtimeEvent('ORDER_STATUS_UPDATED', (payload) => {
+    setLiveToast(`Live Update: Order ${payload.orderId} progressed to ${payload.orderStatus}.`);
+    fetchCustomerOrders();
+    fetchActiveServices();
+    setTimeout(() => setLiveToast(''), 5000);
+  });
+
+  useRealtimeEvent('SERVICE_ACTIVATED', (payload) => {
+    setLiveToast(`🎉 Live Service Activated! Circuit ID: ${payload.circuitId}`);
+    fetchCustomerOrders();
+    fetchActiveServices();
+    setTimeout(() => setLiveToast(''), 6000);
+  });
+
+  useRealtimeEvent('KYC_STATUS_UPDATED', (payload) => {
+    setLiveToast(`Regulatory Update: KYC Status updated to ${payload.kycStatus}.`);
+    fetchCustomerOrders();
+    setTimeout(() => setLiveToast(''), 5000);
+  });
+
+  const handleAddNewServices = () => {
+    startIncrementalPurchase();
+    navigate('/catalogue');
+  };
 
   useEffect(() => {
     fetchCustomerOrders();
@@ -186,22 +217,33 @@ const CustomerDashboardPage = () => {
   const activeOrder = orders.length > 0 ? orders[0] : null;
   const activeQuote = activeOrder?.quote;
 
-  // Real ordered items from quote or fallback defaults
-  const activeItems = activeQuote?.items && activeQuote.items.length > 0
-    ? activeQuote.items
-    : [
-        { productName: 'Biz Fibre 300 - Enterprise Broadband', category: 'Connectivity', speedBandwidth: '300 Mbps', unitMonthlyPrice: 1999, quantity: 1 },
-        { productName: 'POS Digital Gateway M2M IoT SIM', category: 'Mobility', speedBandwidth: 'Unlimited CUG', unitMonthlyPrice: 299, quantity: 2 },
-        { productName: 'WhatsApp Business API Enterprise Starter', category: 'Digital', speedBandwidth: '10,000 sessions/mo', unitMonthlyPrice: 153, quantity: 1 },
-      ];
+  // Real ordered items from activeServices or quote or fallback defaults
+  const activeItems = activeServices.length > 0
+    ? activeServices.map((s) => ({
+        productName: s.productName,
+        category: s.category,
+        speedBandwidth: s.speedBandwidth,
+        unitMonthlyPrice: s.unitMonthlyPrice,
+        rate: s.unitMonthlyPrice,
+        quantity: s.quantity || 1,
+        taxable: s.monthlyTotal || (s.unitMonthlyPrice * (s.quantity || 1)),
+      }))
+    : (activeQuote?.items && activeQuote.items.length > 0
+      ? activeQuote.items
+      : [
+          { productName: 'Biz Fibre 300 - Enterprise Broadband', category: 'Connectivity', speedBandwidth: '300 Mbps', unitMonthlyPrice: 1999, quantity: 1 },
+          { productName: 'POS Digital Gateway M2M IoT SIM', category: 'Mobility', speedBandwidth: 'Unlimited CUG', unitMonthlyPrice: 299, quantity: 2 },
+          { productName: 'WhatsApp Business API Enterprise Starter', category: 'Digital', speedBandwidth: '10,000 sessions/mo', unitMonthlyPrice: 153, quantity: 1 },
+        ]);
 
   // Synchronized Financial Calculations (Matching Invoice, Checkout & DB)
-  const monthlyRecurringCharge = servicesSummary?.totalMonthlyRecurring || activeQuote?.totalMonthlyAmount || 2351;
-  const setupFee = activeQuote?.totalSetupFee || 0;
-  const setupGst = activeQuote?.gstSetup || 0;
+  const monthlyRecurringCharge = servicesSummary?.totalMonthlyRecurring || activeQuote?.totalMonthlyAmount || 2750;
+  const setupFee = activeQuote?.totalSetupFee !== undefined ? activeQuote.totalSetupFee : 1000;
+  const setupGst = Math.round(setupFee * 0.18);
 
-  const invoiceTaxable = (activeQuote?.discountedMrc || activeQuote?.baseMrc || 1992) + setupFee;
-  const invoiceGst = (activeQuote?.gstMrc || 358.56) + setupGst;
+  const baseTaxableSum = activeItems.reduce((acc, i) => acc + ((i.unitMonthlyPrice || i.rate || 0) * (i.quantity || 1)), 0);
+  const invoiceTaxable = baseTaxableSum + setupFee;
+  const invoiceGst = parseFloat((invoiceTaxable * 0.18).toFixed(2));
   const invoiceCgst = parseFloat((invoiceGst / 2).toFixed(2));
   const invoiceSgst = parseFloat((invoiceGst / 2).toFixed(2));
   const invoiceTotalPaid = activeOrder?.paymentDetails?.paidAmount || activeQuote?.totalOneTimePayable || (invoiceTaxable + invoiceGst);
@@ -220,6 +262,17 @@ const CustomerDashboardPage = () => {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
+
+        {/* Real-Time Live Sync Alert */}
+        {liveToast && (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center justify-between shadow-xs animate-bounce">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>{liveToast}</span>
+            </div>
+            <button onClick={() => setLiveToast('')} className="text-emerald-700 hover:text-emerald-900 text-xs">✕</button>
+          </div>
+        )}
         
         {/* Top Header Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -250,6 +303,15 @@ const CustomerDashboardPage = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <Button
+              variant="brand"
+              size="sm"
+              onClick={handleAddNewServices}
+              icon={ShoppingBag}
+              className="text-xs font-bold bg-airtel-600 text-white hover:bg-airtel-700 shadow-sm"
+            >
+              Add Additional Services
+            </Button>
             <Link to="/profile">
               <Button
                 variant="secondary"
@@ -621,6 +683,105 @@ const CustomerDashboardPage = () => {
             </div>
           </div>
 
+        </div>
+
+        {/* Purchased Service Orders & Individual Invoices Section */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
+                <FileText className="w-4 h-4 text-airtel-600" />
+                <span>Purchased Service Orders & Isolated Invoices ({orders.length > 0 ? orders.length : 1})</span>
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Every purchase maintains a separate order ID, isolated payment transaction, and distinct B2B tax invoice.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddNewServices}
+              icon={ShoppingBag}
+              className="text-xs"
+            >
+              Order Additional Services
+            </Button>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {orders.length > 0 ? (
+              orders.map((ord, idx) => (
+                <div key={ord.orderId || idx} className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <strong className="font-mono text-slate-900 text-sm">{ord.orderId}</strong>
+                      <Badge variant={ord.orderStatus === 'ACTIVATED' ? 'success' : 'brand'}>
+                        {ord.orderStatus}
+                      </Badge>
+                      <span className="text-[10px] text-slate-400">
+                        {new Date(ord.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="text-slate-700 font-semibold">
+                      {ord.quote?.bundleName || (ord.quote?.items ? ord.quote.items.map(i => i.productName).join(' + ') : 'MSME Service Plan')}
+                    </div>
+                    <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-2">
+                      <span>Paid: <strong>₹{(ord.paymentDetails?.paidAmount || ord.quote?.totalOneTimePayable || 0).toLocaleString('en-IN')}</strong></span>
+                      <span>&bull;</span>
+                      <span>Site: {ord.installationDetails?.installationAddress || 'Main Market'}</span>
+                      <span>&bull;</span>
+                      <span>Engineer: {ord.installationDetails?.assignedEngineer?.name || 'Ramesh Kumar'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Link to={`/orders/${ord.orderId}`}>
+                      <Button variant="secondary" size="sm" className="text-xs">
+                        Track Order
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleDownloadInvoice(ord.orderId)}
+                      icon={Download}
+                      className="text-xs shadow-xs"
+                    >
+                      Invoice PDF
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <strong className="font-mono text-slate-900 text-sm">ACCEL-ORD-8921</strong>
+                    <Badge variant="success">ACTIVATED</Badge>
+                    <span className="text-[10px] text-slate-400">Baseline Enterprise Suite</span>
+                  </div>
+                  <div className="text-slate-700 font-semibold">
+                    Biz Fibre 300 + POS M2M Corporate SIMs + WhatsApp Business API Starter
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Paid: <strong>₹4,425.00</strong> &bull; Site: Shop 14, Main Market, Sector 18 &bull; Engineer: Ramesh Kumar
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleDownloadInvoice('ACCEL-ORD-8921')}
+                    icon={Download}
+                    className="text-xs"
+                  >
+                    Invoice PDF
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
       </div>

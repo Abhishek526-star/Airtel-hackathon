@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../context/LanguageContext';
+import { useSocket, useRealtimeEvent } from '../context/SocketContext';
 import api from '../services/api';
 import Stepper from '../components/common/Stepper';
 import Button from '../components/common/Button';
@@ -23,6 +24,7 @@ const OrderTrackerPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { joinOrder, leaveOrder } = useSocket();
 
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,6 +32,34 @@ const OrderTrackerPage = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [realtimeNotice, setRealtimeNotice] = useState('');
+
+  // Join order-specific WebSocket room
+  useEffect(() => {
+    if (id) {
+      joinOrder(id);
+    }
+    return () => {
+      if (id) leaveOrder(id);
+    };
+  }, [id, joinOrder, leaveOrder]);
+
+  // Real-Time Listener: Order status advancement from technician or system
+  useRealtimeEvent('ORDER_STATUS_UPDATED', (payload) => {
+    if (payload.orderId === id || payload.orderId === order?.orderId) {
+      setRealtimeNotice(`Live Update: Order transitioned to ${payload.orderStatus}`);
+      fetchOrderDetails();
+      setTimeout(() => setRealtimeNotice(''), 4000);
+    }
+  });
+
+  useRealtimeEvent('SERVICE_ACTIVATED', (payload) => {
+    if (payload.orderId === id || payload.orderId === order?.orderId) {
+      setRealtimeNotice(`🎉 Service Activated! Circuit ID: ${payload.circuitId}`);
+      fetchOrderDetails();
+      setTimeout(() => setRealtimeNotice(''), 5000);
+    }
+  });
 
   const handleDownloadInvoice = async () => {
     try {
@@ -135,6 +165,14 @@ const OrderTrackerPage = () => {
 
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-8">
         
+        {/* Real-time Notification Banner */}
+        {realtimeNotice && (
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center space-x-2 animate-bounce">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>{realtimeNotice}</span>
+          </div>
+        )}
+
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
           <div className="flex items-center space-x-2">

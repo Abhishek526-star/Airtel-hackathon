@@ -18,7 +18,7 @@ import {
 
 const QuoteBuilderPage = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { t } = useTranslation();
   const {
     cartItems,
@@ -29,6 +29,7 @@ const QuoteBuilderPage = () => {
     setContractDuration,
     setActiveQuote,
     setCurrentStep,
+    isIncrementalPurchase,
   } = useOnboarding();
 
   const [pricing, setPricing] = useState(null);
@@ -58,6 +59,7 @@ const QuoteBuilderPage = () => {
       const res = await api.post('/quotes/calculate', {
         items: cartItems,
         contractDurationMonths: contractDuration,
+        isIncremental: isIncrementalPurchase,
       });
 
       if (res.success && res.data) {
@@ -83,13 +85,20 @@ const QuoteBuilderPage = () => {
       const res = await api.post('/quotes', {
         items: cartItems,
         contractDurationMonths: contractDuration,
-        bundleName: 'Customized MSME Business Bundle',
+        bundleName: isIncrementalPurchase ? 'Additional Enterprise Service Add-on' : 'Customized MSME Business Bundle',
+        isIncremental: isIncrementalPurchase,
       });
 
       if (res.success && res.data) {
         setActiveQuote(res.data);
-        setCurrentStep(3);
-        navigate('/kyc');
+        // If user already has verified KYC on their account, skip KYC re-verification directly to Checkout
+        if (user?.businessProfile?.kycStatus === 'VERIFIED') {
+          setCurrentStep(4);
+          navigate('/checkout');
+        } else {
+          setCurrentStep(3);
+          navigate('/kyc');
+        }
       }
     } catch (err) {
       setErrorMsg(err.message || 'Failed to lock quote.');

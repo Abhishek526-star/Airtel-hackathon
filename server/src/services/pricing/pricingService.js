@@ -5,8 +5,9 @@ class PricingService {
    * Server-Authoritative Price Calculation
    * @param {Array} items [{ productId, quantity }]
    * @param {Number} contractDurationMonths 12, 24, or 36
+   * @param {Boolean} isIncremental whether this is an add-on to an existing active account
    */
-  async calculateQuote(items = [], contractDurationMonths = 12) {
+  async calculateQuote(items = [], contractDurationMonths = 12, isIncremental = false) {
     if (!items || items.length === 0) {
       throw new Error('Quote must contain at least one product.');
     }
@@ -16,7 +17,7 @@ class PricingService {
     const productMap = new Map(products.map((p) => [p.productId, p]));
 
     let baseMrc = 0;
-    let totalSetupFee = 0;
+    let hasPhysicalSetup = false;
     const itemizedDetails = [];
 
     for (const item of items) {
@@ -27,10 +28,12 @@ class PricingService {
 
       const quantity = Math.max(1, parseInt(item.quantity, 10) || 1);
       const itemMrc = prod.monthlyPrice * quantity;
-      const itemSetup = prod.setupFee * quantity;
+
+      if (prod.setupFee > 0 || prod.category === 'Connectivity' || prod.category === 'IoT & Physical') {
+        hasPhysicalSetup = true;
+      }
 
       baseMrc += itemMrc;
-      totalSetupFee += itemSetup;
 
       itemizedDetails.push({
         product: prod._id,
@@ -39,11 +42,15 @@ class PricingService {
         category: prod.category,
         quantity,
         unitMonthlyPrice: prod.monthlyPrice,
-        unitSetupFee: prod.setupFee,
+        unitSetupFee: prod.setupFee > 0 ? 1000 : 0,
         totalItemMrc: itemMrc,
-        totalItemSetup: itemSetup,
+        totalItemSetup: 0,
       });
     }
+
+    // Standard Enterprise Policy: Installation charge is flat ₹1,000 one-time only
+    // If this is an incremental purchase on an existing active fiber account, installation was already paid -> ₹0 setup
+    const totalSetupFee = isIncremental ? 0 : (hasPhysicalSetup ? 1000 : 0);
 
     // Apply contract duration discounts:
     // 12 months: 0% discount

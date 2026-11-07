@@ -3,6 +3,7 @@ const Quote = require('../models/Quote');
 const BusinessProfile = require('../models/BusinessProfile');
 const KYCDocument = require('../models/KYCDocument');
 const User = require('../models/User');
+const { emitOrderCreated, emitOrderStatusUpdated, emitTechnicianTaskUpdated } = require('../socket');
 
 const generateOrderId = () => {
   const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -49,14 +50,37 @@ exports.createOrder = async (req, res, next) => {
 
     const profile = await BusinessProfile.findOne({ user: req.user._id });
 
-    // Check if user has verified KYC documents
+    // Idempotency: prevent accidental duplicate order if clicked multiple times within 10 seconds
+    const tenSecondsAgo = new Date(Date.now() - 10000);
+    const existingRecentOrder = await Order.findOne({
+      user: req.user._id,
+      quote: quote._id,
+      createdAt: { $gte: tenSecondsAgo },
+    });
+    if (existingRecentOrder) {
+      return res.status(200).json({
+        success: true,
+        message: 'Order already received and confirmed.',
+        data: existingRecentOrder,
+        error: null,
+      });
+    }
+
+    // Check if user has verified KYC documents OR verified business profile (Reusable KYC)
     const verifiedKyc = await KYCDocument.findOne({
       user: req.user._id,
       verificationStatus: 'VERIFIED',
     });
 
-    const initialKycStatus = verifiedKyc ? 'VERIFIED' : 'DOCUMENTS_PENDING';
-    const initialOrderStatus = verifiedKyc ? 'KYC_VERIFIED' : 'KYC_PENDING';
+    const isKycAlreadyVerified = Boolean(
+      verifiedKyc ||
+      (profile && profile.kycStatus === 'VERIFIED') ||
+      profile?.hasGstin ||
+      profile?.hasUdyam
+    );
+
+    const initialKycStatus = isKycAlreadyVerified ? 'VERIFIED' : 'DOCUMENTS_PENDING';
+    const initialOrderStatus = isKycAlreadyVerified ? 'KYC_VERIFIED' : 'KYC_PENDING';
 
     const orderId = generateOrderId();
     const scheduledDateTime = scheduledDate ? new Date(scheduledDate) : new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -70,11 +94,11 @@ exports.createOrder = async (req, res, next) => {
       },
     ];
 
-    if (verifiedKyc) {
+    if (isKycAlreadyVerified) {
       timeline.push({
         status: 'KYC_VERIFIED',
-        title: 'Smart KYC Pre-Verified',
-        description: `Entity verified via ${verifiedKyc.documentType} (${verifiedKyc.ocrExtractedData.extractedId}).`,
+        title: 'Smart KYC Pre-Verified (Rule 46 DoT)',
+        description: `DoT verified credential reused under registration ${profile?.gstin || profile?.udyamNumber || verifiedKyc?.ocrExtractedData?.extractedId || 'Registry Verified'}. Zero paperwork required.`,
         timestamp: new Date(),
       });
     }
@@ -166,6 +190,9 @@ exports.createOrder = async (req, res, next) => {
     // Mark quote as accepted
     quote.status = 'ACCEPTED';
     await quote.save();
+
+    // Real-Time Notification to Admin, User, and assigned Field Technician
+    emitOrderCreated(order);
 
     res.status(201).json({
       success: true,
@@ -289,6 +316,10 @@ exports.updateOrderStatus = async (req, res, next) => {
     });
 
     await order.save();
+
+    // Real-Time Notification to Customer, Field Tech, and Admin
+    emitOrderStatusUpdated(order, { notes });
+    emitTechnicianTaskUpdated(order, { notes });
 
     res.status(200).json({
       success: true,

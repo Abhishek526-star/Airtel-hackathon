@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const User = require('../models/User');
 const BusinessProfile = require('../models/BusinessProfile');
+const { emitTechnicianTaskUpdated, emitOrderStatusUpdated, emitServiceActivated } = require('../socket');
 
 // @desc    Get all installation tasks assigned to the authenticated field technician
 // @route   GET /api/technician/tasks
@@ -183,6 +184,21 @@ exports.updateTaskStatus = async (req, res, next) => {
     }
 
     await order.save();
+
+    // Emit Real-Time Telemetry to Customer, Admin, and Technician dashboards
+    emitOrderStatusUpdated(order, { notes });
+    emitTechnicianTaskUpdated(order, { notes, opticalPowerRx, opticalPowerTx });
+    if (nextStatus === 'ACTIVATED') {
+      emitServiceActivated({
+        orderId: order.orderId,
+        userId: order.user,
+        circuitId: order.serviceActivation.circuitId,
+        staticIp: order.serviceActivation.assignedStaticIp,
+        cpeSerialNumber: order.serviceActivation.cpeSerialNumber,
+        slaUptimePercent: order.serviceActivation.slaUptimePercent,
+        activatedAt: order.serviceActivation.activatedAt,
+      });
+    }
 
     res.status(200).json({
       success: true,

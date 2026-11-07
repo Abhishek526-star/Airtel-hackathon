@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
+import { useRealtimeEvent } from '../context/SocketContext';
 import api from '../services/api';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
@@ -55,6 +56,18 @@ const TechnicianDashboardPage = () => {
   // Availability status state
   const [availabilityStatus, setAvailabilityStatus] = useState(user?.availabilityStatus || 'AVAILABLE');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [liveToast, setLiveToast] = useState('');
+
+  // Real-Time Event Handlers
+  useRealtimeEvent('ORDER_CREATED', (payload) => {
+    setLiveToast(`⚡ New Work Order Assigned: ${payload.orderId} (${payload.city || 'Operational Circle'})`);
+    fetchTasks();
+    setTimeout(() => setLiveToast(''), 6000);
+  });
+
+  useRealtimeEvent('TECHNICIAN_TASK_UPDATED', () => {
+    fetchTasks();
+  });
 
   const fetchTasks = async () => {
     try {
@@ -185,7 +198,19 @@ const TechnicianDashboardPage = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Technician Portal Top Bar */}
       <section className="bg-slate-900 text-white border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-4">
+
+          {/* Real-Time Work Order Alert */}
+          {liveToast && (
+            <div className="p-3.5 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-bold flex items-center justify-between shadow-xs animate-bounce">
+              <div className="flex items-center space-x-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span>{liveToast}</span>
+              </div>
+              <button onClick={() => setLiveToast('')} className="text-amber-300 hover:text-white text-xs">✕</button>
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             
             {/* Technician Profile Card */}

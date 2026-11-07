@@ -10,6 +10,15 @@ const resolveInvoiceContext = async (orderId, authUser) => {
   let user = authUser;
   let profile = null;
   let quote = null;
+  let allActiveOrders = [];
+
+  if (user && user._id) {
+    allActiveOrders = await Order.find({ user: user._id, orderStatus: { $ne: 'CANCELLED' } })
+      .populate('user')
+      .populate('businessProfile')
+      .populate('quote')
+      .sort({ createdAt: -1 });
+  }
 
   if (orderId) {
     order = await Order.findOne({ orderId })
@@ -22,17 +31,10 @@ const resolveInvoiceContext = async (orderId, authUser) => {
       if (order.businessProfile) profile = order.businessProfile;
       if (order.quote) quote = order.quote;
     }
-  } else if (user && user._id) {
-    order = await Order.findOne({ user: user._id })
-      .sort({ createdAt: -1 })
-      .populate('user')
-      .populate('businessProfile')
-      .populate('quote');
-
-    if (order) {
-      if (order.businessProfile) profile = order.businessProfile;
-      if (order.quote) quote = order.quote;
-    }
+  } else if (allActiveOrders.length > 0) {
+    order = allActiveOrders[0];
+    if (order.businessProfile) profile = order.businessProfile;
+    if (order.quote) quote = order.quote;
   }
 
   // Fallback profile if not populated via order
@@ -68,7 +70,7 @@ const resolveInvoiceContext = async (orderId, authUser) => {
     }
   }
 
-  return { order, user, profile: finalProfile, quote, customerAddress };
+  return { order, user, profile: finalProfile, quote, customerAddress, allActiveOrders };
 };
 
 // @desc    Download Official B2B Telecom GST Tax Invoice PDF
@@ -77,101 +79,153 @@ const resolveInvoiceContext = async (orderId, authUser) => {
 exports.downloadInvoice = async (req, res, next) => {
   try {
     const { orderId } = req.query;
-    const { order, user, profile, quote, customerAddress } = await resolveInvoiceContext(orderId, req.user);
+    const { order, user, profile, quote, customerAddress, allActiveOrders } = await resolveInvoiceContext(orderId, req.user);
 
     const invoiceSeq = order?.orderId ? order.orderId.replace(/[^0-9]/g, '') : '8921';
     const invoiceNumber = `ACCEL/2026/B2B-INV-${invoiceSeq}`;
 
-    // Itemized services from order or quote pricing
-    const quoteSource = quote || order?.quoteSnapshot;
     let items = [];
     let taxableValue = 1992.00;
     let cgstAmount = 179.28;
     let sgstAmount = 179.28;
     let totalAmount = 2350.56;
 
-    if (quoteSource && quoteSource.items && quoteSource.items.length > 0) {
-      const discountTotal = (quoteSource.baseMrc && quoteSource.discountedMrc)
-        ? Math.max(0, quoteSource.baseMrc - quoteSource.discountedMrc)
-        : (quoteSource.discountAmount || 0);
+    // SCENARIO A: If no specific orderId is passed AND customer has multiple active orders:
+    // Generate Consolidated Account Monthly Tax Invoice listing ALL active services matching dashboard
+    if (!orderId && allActiveOrders && allActiveOrders.length > 1) {
+      let combinedMrc = 0;
+      items = [];
 
-      const discountPerItem = discountTotal / quoteSource.items.length;
+      allActiveOrders.forEach((ord) => {
+        const qSource = ord.quote;
+        if (qSource && qSource.items && qSource.items.length > 0) {
+          qSource.items.forEach((i) => {
+            let sac = '998412';
+            const cat = (i.category || '').toLowerCase();
+            if (cat.includes('voice') || cat.includes('sim') || cat.includes('mobile')) sac = '998413';
+            else if (cat.includes('cloud') || cat.includes('whatsapp')) sac = '998422';
+            else if (cat.includes('security') || cat.includes('iot')) sac = '998419';
 
-      items = quoteSource.items.map((i) => {
-        let sac = '998412'; // default broadband
-        const cat = (i.category || '').toLowerCase();
-        if (cat.includes('voice') || cat.includes('sim') || cat.includes('mobile')) sac = '998413';
-        else if (cat.includes('cloud') || cat.includes('whatsapp')) sac = '998422';
-        else if (cat.includes('security') || cat.includes('iot')) sac = '998419';
+            const unitRate = i.unitMonthlyPrice || i.monthlyPrice || 999;
+            const qty = i.quantity || 1;
+            const lineTotal = unitRate * qty;
+            combinedMrc += lineTotal;
 
-        const unitRate = i.unitMonthlyPrice || i.monthlyPrice || 999;
-        const qty = i.quantity || 1;
-        const lineTotal = unitRate * qty;
-        const discount = Math.min(lineTotal, discountPerItem);
-
-        return {
-          desc: `${i.productName} (${i.speedBandwidth || i.category || 'Monthly Service'})`,
-          sac,
-          qty,
-          rate: unitRate,
-          discount,
-          taxable: Math.max(0, lineTotal - discount),
-        };
+            items.push({
+              desc: `${i.productName} (${i.speedBandwidth || i.category || 'Monthly Service'})`,
+              sac,
+              qty,
+              rate: unitRate,
+              discount: 0,
+              taxable: lineTotal,
+            });
+          });
+        }
       });
 
-      // Reconcile One-Time Installation / Setup Fee if present
-      if (quoteSource.totalSetupFee && quoteSource.totalSetupFee > 0) {
-        items.push({
-          desc: 'One-Time Optical Fiber Installation, ONT Router Provisioning & On-Site Setup',
-          sac: '998419',
-          qty: 1,
-          rate: quoteSource.totalSetupFee,
-          discount: 0,
-          taxable: quoteSource.totalSetupFee,
-        });
-      }
-
-      const monthlyTaxable = quoteSource.discountedMrc || quoteSource.baseMrc || 0;
-      const setupTaxable = quoteSource.totalSetupFee || 0;
-      taxableValue = monthlyTaxable + setupTaxable;
-
-      const monthlyGst = quoteSource.gstMrc || (monthlyTaxable * 0.18);
-      const setupGst = quoteSource.gstSetup || (setupTaxable * 0.18);
-      const totalGst = monthlyGst + setupGst;
-
+      taxableValue = combinedMrc;
+      const totalGst = parseFloat((taxableValue * 0.18).toFixed(2));
       cgstAmount = parseFloat((totalGst / 2).toFixed(2));
       sgstAmount = parseFloat((totalGst / 2).toFixed(2));
-
-      // Grand total matches order total payable / paid amount exactly
-      totalAmount = order?.paymentDetails?.paidAmount || quoteSource.totalOneTimePayable || (taxableValue + totalGst);
+      totalAmount = parseFloat((taxableValue + totalGst).toFixed(2));
     } else {
-      // Default standard MSME package
-      items = [
-        {
-          desc: 'Accel Biz Fibre 200M Broadband (Unlimited Symmetrical Data)',
-          sac: '998412',
-          qty: 1,
-          rate: 1999.00,
-          discount: 100.00,
-          taxable: 1899.00,
-        },
-        {
-          desc: 'POS Digital Gateway M2M Corporate SIM (Unlimited CUG Calling)',
-          sac: '998413',
-          qty: 1,
-          rate: 299.00,
-          discount: 0.00,
-          taxable: 299.00,
-        },
-        {
-          desc: 'WhatsApp Business API Starter (1,000 automated sessions/mo)',
-          sac: '998422',
-          qty: 1,
-          rate: 153.00,
-          discount: 0.00,
-          taxable: 153.00,
-        },
-      ];
+      // SCENARIO B: Specific orderId passed OR single order: itemize ONLY this order's items
+      const quoteSource = quote || order?.quoteSnapshot;
+
+      if (quoteSource && quoteSource.items && quoteSource.items.length > 0) {
+        const discountTotal = (quoteSource.baseMrc && quoteSource.discountedMrc)
+          ? Math.max(0, quoteSource.baseMrc - quoteSource.discountedMrc)
+          : (quoteSource.discountAmount || 0);
+
+        const discountPerItem = discountTotal / quoteSource.items.length;
+
+        items = quoteSource.items.map((i) => {
+          let sac = '998412';
+          const cat = (i.category || '').toLowerCase();
+          if (cat.includes('voice') || cat.includes('sim') || cat.includes('mobile')) sac = '998413';
+          else if (cat.includes('cloud') || cat.includes('whatsapp')) sac = '998422';
+          else if (cat.includes('security') || cat.includes('iot')) sac = '998419';
+
+          const unitRate = i.unitMonthlyPrice || i.monthlyPrice || 999;
+          const qty = i.quantity || 1;
+          const lineTotal = unitRate * qty;
+          const discount = Math.min(lineTotal, discountPerItem);
+
+          return {
+            desc: `${i.productName} (${i.speedBandwidth || i.category || 'Monthly Service'})`,
+            sac,
+            qty,
+            rate: unitRate,
+            discount,
+            taxable: Math.max(0, lineTotal - discount),
+          };
+        });
+
+        // Reconcile One-Time Installation / Setup Fee (Flat ₹1,000 for initial physical connection; ₹0 for incremental)
+        if (quoteSource.totalSetupFee && quoteSource.totalSetupFee > 0) {
+          items.push({
+            desc: 'One-Time Optical Fiber Installation, ONT Router Provisioning & On-Site Setup',
+            sac: '998419',
+            qty: 1,
+            rate: quoteSource.totalSetupFee,
+            discount: 0,
+            taxable: quoteSource.totalSetupFee,
+          });
+        }
+
+        const monthlyTaxable = quoteSource.discountedMrc || quoteSource.baseMrc || 0;
+        const setupTaxable = quoteSource.totalSetupFee || 0;
+        taxableValue = monthlyTaxable + setupTaxable;
+
+        const monthlyGst = quoteSource.gstMrc || (monthlyTaxable * 0.18);
+        const setupGst = quoteSource.gstSetup || (setupTaxable * 0.18);
+        const totalGst = monthlyGst + setupGst;
+
+        cgstAmount = parseFloat((totalGst / 2).toFixed(2));
+        sgstAmount = parseFloat((totalGst / 2).toFixed(2));
+
+        totalAmount = order?.paymentDetails?.paidAmount || quoteSource.totalOneTimePayable || (taxableValue + totalGst);
+      } else {
+        // Fallback: Default standard MSME package matching active services in dashboard + flat ₹1,000 setup fee
+        items = [
+          {
+            desc: 'Biz Fibre 300 - Enterprise Broadband (300 Mbps Symmetrical Data)',
+            sac: '998412',
+            qty: 1,
+            rate: 1999.00,
+            discount: 0.00,
+            taxable: 1999.00,
+          },
+          {
+            desc: 'POS Digital Gateway M2M Corporate SIM (Unlimited CUG Calling)',
+            sac: '998413',
+            qty: 2,
+            rate: 299.00,
+            discount: 0.00,
+            taxable: 598.00,
+          },
+          {
+            desc: 'WhatsApp Business API Starter (1,000 automated sessions/mo)',
+            sac: '998422',
+            qty: 1,
+            rate: 153.00,
+            discount: 0.00,
+            taxable: 153.00,
+          },
+          {
+            desc: 'One-Time Optical Fiber Installation & ONT Router Setup (Enterprise Splicing)',
+            sac: '998419',
+            qty: 1,
+            rate: 1000.00,
+            discount: 0.00,
+            taxable: 1000.00,
+          },
+        ];
+        taxableValue = 3750.00;
+        cgstAmount = 337.50;
+        sgstAmount = 337.50;
+        totalAmount = 4425.00;
+      }
     }
 
     const invoiceData = {

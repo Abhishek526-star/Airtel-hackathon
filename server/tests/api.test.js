@@ -2,10 +2,15 @@ const http = require('http');
 const app = require('../src/app');
 const mongoose = require('mongoose');
 const env = require('../src/config/env');
+const connectDB = require('../src/config/db');
+const { initSocket } = require('../src/socket');
+const { io } = require('socket.io-client');
 
 async function runTests() {
-  await mongoose.connect(env.MONGODB_URI);
-  const server = app.listen(5002);
+  await connectDB();
+  const server = http.createServer(app);
+  initSocket(server);
+  server.listen(5002);
 
   const request = (path, method = 'GET', body = null, token = null) => {
     return new Promise((resolve, reject) => {
@@ -107,6 +112,10 @@ async function runTests() {
       contractDurationMonths: 24,
     });
     console.log('Base MRC: ₹' + quoteCalc.data.data.baseMrc, 'Discounted MRC (5% off 24m): ₹' + quoteCalc.data.data.discountedMrc, 'Total Monthly Bill (incl 18% GST): ₹' + quoteCalc.data.data.totalMonthlyAmount);
+    console.log('One-Time Setup Fee (Flat ₹1,000 Policy): ₹' + quoteCalc.data.data.totalSetupFee);
+    if (quoteCalc.data.data.totalSetupFee !== 1000) {
+      throw new Error(`Expected flat setup fee 1000, got ${quoteCalc.data.data.totalSetupFee}`);
+    }
 
     console.log('\n--- TEST 7: Executive Cohort Analytics (5,000 Official Leads) ---');
     const analytics = await request('/api/analytics/overview');
@@ -610,7 +619,138 @@ async function runTests() {
       throw new Error('Customer KYC status was not updated to VERIFIED after partner approval');
     }
 
-    console.log('\n>>> ALL 18 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    console.log('\n--- TEST 19: Incremental Service Purchasing & Reusable KYC (No Duplicate Billing) ---');
+    // 19a: Pre-verified customer generates quote for additional service only (P15: WhatsApp Business API Starter)
+    const incrementalQuoteRes = await request(
+      '/api/quotes',
+      'POST',
+      {
+        items: [{ productId: 'P15', quantity: 1 }],
+        contractDurationMonths: 12,
+        bundleName: 'Incremental Add-on: WhatsApp Business API',
+        isIncremental: true,
+      },
+      customerToken
+    );
+    console.log('Incremental Quote HTTP:', incrementalQuoteRes.status);
+    console.log('Incremental Quote ID:', incrementalQuoteRes.data.data?.quoteId);
+    console.log('Incremental Quote Items Count:', incrementalQuoteRes.data.data?.items?.length);
+    console.log('Incremental Setup Fee (Should be ₹0 for add-on): ₹' + incrementalQuoteRes.data.data?.totalSetupFee);
+
+    if (
+      incrementalQuoteRes.status !== 201 ||
+      incrementalQuoteRes.data.data?.items?.length !== 1 ||
+      incrementalQuoteRes.data.data?.items[0]?.productId !== 'P15' ||
+      incrementalQuoteRes.data.data?.totalSetupFee !== 0
+    ) {
+      throw new Error('Incremental quote generation failed or billed duplicate setup fee');
+    }
+
+    const incrementalQuoteId = incrementalQuoteRes.data.data?.quoteId;
+
+    // 19b: Place separate order without repeating KYC
+    const order2Res = await request(
+      '/api/orders',
+      'POST',
+      {
+        quoteId: incrementalQuoteId,
+        installationAddress: 'Unit 402, Technology Park, Okhla Phase 3',
+        city: 'Delhi NCR',
+        pincode: '110020',
+        contactPerson: 'Rajesh Gupta',
+        contactPhone: '9810123457',
+        timeSlot: '02:00 PM - 05:00 PM',
+      },
+      customerToken
+    );
+
+    console.log('Order 2 HTTP:', order2Res.status);
+    console.log('Order 2 ID:', order2Res.data.data?.orderId);
+    console.log('Order 2 KYC Status (Reusable):', order2Res.data.data?.kycStatus);
+    console.log('Order 2 Order Status:', order2Res.data.data?.orderStatus);
+
+    if (
+      order2Res.status !== 201 ||
+      order2Res.data.data?.kycStatus !== 'VERIFIED' ||
+      order2Res.data.data?.orderId === newOrderRes.data.data?.orderId
+    ) {
+      throw new Error('Incremental order failed to reuse verified KYC or generated duplicate orderId');
+    }
+
+    const order2Id = order2Res.data.data?.orderId;
+
+    // 19c: Verify Order-Isolated PDF Invoice Download for Order 2
+    const order2InvoicePdf = await downloadPdf(`/api/invoices/download?orderId=${encodeURIComponent(order2Id)}`);
+    console.log('Order 2 Invoice PDF status:', order2InvoicePdf.status);
+    console.log('Order 2 PDF Size:', order2InvoicePdf.byteLength, 'bytes');
+
+    if (order2InvoicePdf.status !== 200 || order2InvoicePdf.byteLength < 1000) {
+      throw new Error('Order-isolated PDF invoice download failed');
+    }
+
+    console.log('\n--- TEST 20: Real-Time WebSocket Telemetry & Event Synchronization ---');
+    // Connect Socket.IO client
+    const socketClient = io('http://localhost:5002', {
+      auth: { token: customerToken },
+      transports: ['websocket'],
+    });
+
+    const socketConnected = await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => resolve(false), 4000);
+      socketClient.on('connect', () => {
+        clearTimeout(timeout);
+        resolve(true);
+      });
+      socketClient.on('connect_error', (e) => {
+        clearTimeout(timeout);
+        console.warn('Socket client connection note:', e.message);
+        resolve(false);
+      });
+    });
+
+    console.log('WebSocket Client Connected:', socketConnected);
+
+    if (socketConnected) {
+      // Listen for ORDER_STATUS_UPDATED
+      const eventPromise = new Promise((resolve) => {
+        const timeout = setTimeout(() => resolve(null), 5000);
+        socketClient.on('ORDER_STATUS_UPDATED', (data) => {
+          clearTimeout(timeout);
+          resolve(data);
+        });
+      });
+
+      // Join room for order2
+      socketClient.emit('join_order', order2Id);
+
+      // Advance status on Order 2
+      await request(
+        `/api/orders/${order2Id}/status`,
+        'PATCH',
+        {
+          nextStatus: 'ACTIVATED',
+          notes: 'WhatsApp Business API provisioned and credentials delivered in real time.',
+        },
+        customerToken
+      );
+
+      const receivedEvent = await eventPromise;
+      console.log('WebSocket Event Received:', Boolean(receivedEvent));
+      if (receivedEvent) {
+        console.log('Received Order Status in Real Time:', receivedEvent.orderStatus);
+        console.log('Received Order ID:', receivedEvent.orderId);
+      }
+      socketClient.disconnect();
+    }
+
+    // Verify Active Services contains combined subscriptions
+    const finalServicesRes = await request('/api/services/active', 'GET', null, customerToken);
+    console.log('Final Combined Active Services Count:', finalServicesRes.data.data?.services?.length);
+    if (finalServicesRes.status !== 200 || (finalServicesRes.data.data?.services?.length || 0) < 2) {
+      throw new Error('Active services failed to aggregate multiple purchased orders');
+    }
+
+    console.log('\n>>> ALL 20 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {

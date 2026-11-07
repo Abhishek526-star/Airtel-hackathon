@@ -4,6 +4,7 @@ const BusinessProfile = require('../models/BusinessProfile');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const AssistanceRequest = require('../models/AssistanceRequest');
+const { emitKycStatusUpdated, emitOrderStatusUpdated, emitPartnerAssistanceRequested, emitKycExceptionAssigned } = require('../socket');
 
 // @desc    Customer requests assistance -> dynamic assignment by availability and location
 // @route   POST /api/partner/request-assistance
@@ -85,6 +86,12 @@ exports.requestAssistance = async (req, res, next) => {
     await User.findByIdAndUpdate(candidatePartner._id, {
       $inc: { activeAssignedLeadsCount: 1 },
     });
+
+    // Real-Time Notification to Partner & Admin
+    emitPartnerAssistanceRequested(assistanceRequest);
+    if (assistanceRequest.requestType === 'KYC_ASSISTANCE') {
+      emitKycExceptionAssigned(assistanceRequest);
+    }
 
     res.status(201).json({
       success: true,
@@ -349,7 +356,18 @@ exports.approveKycRequest = async (req, res, next) => {
           timestamp: new Date(),
         });
         await ord.save();
+        emitOrderStatusUpdated(ord, { notes: 'KYC verified by on-site partner.' });
       }
+
+      // Real-Time KYC Status Broadcast
+      emitKycStatusUpdated({
+        userId: request.customer ? request.customer.toString() : null,
+        kycStatus: 'VERIFIED',
+        documentType: request.documentType || 'PHYSICAL_VERIFIED',
+        verifiedIdentifier: request.ocrExtractedId || 'VERIFIED-BY-PARTNER',
+        verifiedAt: new Date().toISOString(),
+        message: `Smart KYC approved on-site by Partner ${req.user.fullName}.`,
+      });
     }
 
     res.status(200).json({

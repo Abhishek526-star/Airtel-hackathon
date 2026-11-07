@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { useSocket } from '../../context/SocketContext';
 import LanguageSelector from './LanguageSelector';
 import { 
   Sparkles, 
@@ -23,6 +24,7 @@ import {
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { isConnected } = useSocket();
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -97,6 +99,14 @@ const Navbar = () => {
 
           {/* Right Header Actions */}
           <div className="hidden md:flex items-center space-x-3">
+            {/* Real-time synchronization indicator */}
+            {isConnected && (
+              <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs" title="Connected to Real-Time Synchronizer">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Live Sync</span>
+              </span>
+            )}
+
             {/* Language Selector Dropdown */}
             <LanguageSelector />
 

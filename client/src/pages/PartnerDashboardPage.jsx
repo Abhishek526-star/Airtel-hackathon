@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { useRealtimeEvent } from '../context/SocketContext';
 import api from '../services/api';
 import Badge from '../components/common/Badge';
 import Button from '../components/common/Button';
@@ -67,6 +68,20 @@ const PartnerDashboardPage = () => {
   const [selectedKycReq, setSelectedKycReq] = useState(null);
   const [kycApproveModalOpen, setKycApproveModalOpen] = useState(false);
   const [kycNotes, setKycNotes] = useState('Partner conducted physical on-site inspection of original statutory documents and verified signatory identity under DPDP Act 2023.');
+  const [liveToast, setLiveToast] = useState('');
+
+  // Real-Time Event Listeners
+  useRealtimeEvent('KYC_EXCEPTION_ASSIGNED', (payload) => {
+    setLiveToast(`⚡ New KYC Verification Request Assigned: ${payload.customerName} (${payload.businessName || payload.locationCircle})`);
+    fetchAssignedRequests();
+    setTimeout(() => setLiveToast(''), 6000);
+  });
+
+  useRealtimeEvent('PARTNER_ASSISTANCE_REQUESTED', (payload) => {
+    setLiveToast(`Incoming Customer Assistance Request: ${payload.customerName || 'Merchant'} (${payload.locationCircle || 'Circle'})`);
+    fetchAssignedRequests();
+    setTimeout(() => setLiveToast(''), 5000);
+  });
   const [isApprovingKyc, setIsApprovingKyc] = useState(false);
 
   useEffect(() => {
@@ -211,6 +226,17 @@ const PartnerDashboardPage = () => {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
+
+        {/* Real-time Task Notification Banner */}
+        {liveToast && (
+          <div className="p-3.5 rounded-2xl bg-red-50 border border-red-300 text-red-900 text-xs font-bold flex items-center justify-between shadow-xs animate-bounce">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-airtel-600 animate-pulse"></span>
+              <span>{liveToast}</span>
+            </div>
+            <button onClick={() => setLiveToast('')} className="text-red-700 hover:text-red-900 text-xs">✕</button>
+          </div>
+        )}
         
         {/* Top Header Card with Dynamic Availability Toggle */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">

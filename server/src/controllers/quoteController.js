@@ -1,4 +1,5 @@
 const Quote = require('../models/Quote');
+const Order = require('../models/Order');
 const BusinessProfile = require('../models/BusinessProfile');
 const pricingService = require('../services/pricing/pricingService');
 
@@ -12,8 +13,18 @@ const generateQuoteId = () => {
 // @access  Public / Authenticated
 exports.calculateQuote = async (req, res, next) => {
   try {
-    const { items = [], contractDurationMonths = 12 } = req.body;
-    const calculation = await pricingService.calculateQuote(items, contractDurationMonths);
+    const { items = [], contractDurationMonths = 12, isIncremental = false } = req.body;
+
+    let shouldBeIncremental = Boolean(isIncremental);
+    if (!shouldBeIncremental && req.user && req.user._id) {
+      const activeOrdersCount = await Order.countDocuments({
+        user: req.user._id,
+        orderStatus: { $ne: 'CANCELLED' },
+      });
+      if (activeOrdersCount > 0) shouldBeIncremental = true;
+    }
+
+    const calculation = await pricingService.calculateQuote(items, contractDurationMonths, shouldBeIncremental);
 
     res.status(200).json({
       success: true,
@@ -31,8 +42,18 @@ exports.calculateQuote = async (req, res, next) => {
 // @access  Private (Authenticated)
 exports.createQuote = async (req, res, next) => {
   try {
-    const { items = [], contractDurationMonths = 12, bundleName } = req.body;
-    const calculation = await pricingService.calculateQuote(items, contractDurationMonths);
+    const { items = [], contractDurationMonths = 12, bundleName, isIncremental = false } = req.body;
+
+    let shouldBeIncremental = Boolean(isIncremental);
+    if (!shouldBeIncremental && req.user && req.user._id) {
+      const activeOrdersCount = await Order.countDocuments({
+        user: req.user._id,
+        orderStatus: { $ne: 'CANCELLED' },
+      });
+      if (activeOrdersCount > 0) shouldBeIncremental = true;
+    }
+
+    const calculation = await pricingService.calculateQuote(items, contractDurationMonths, shouldBeIncremental);
 
     const profile = await BusinessProfile.findOne({ user: req.user._id });
 

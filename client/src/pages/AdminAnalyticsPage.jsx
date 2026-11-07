@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../context/LanguageContext';
+import { useRealtimeEvent } from '../context/SocketContext';
 import api from '../services/api';
 import Badge from '../components/common/Badge';
 import { 
@@ -18,6 +19,26 @@ const AdminAnalyticsPage = () => {
   const [funnel, setFunnel] = useState([]);
   const [cohort, setCohort] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [liveToast, setLiveToast] = useState('');
+
+  // Real-Time Event Handlers
+  useRealtimeEvent('ORDER_CREATED', (payload) => {
+    setLiveToast(`⚡ Live Order Placed: ${payload.orderId} (₹${payload.paidAmount?.toLocaleString('en-IN')})`);
+    fetchAnalyticsData();
+    setTimeout(() => setLiveToast(''), 5000);
+  });
+
+  useRealtimeEvent('SERVICE_ACTIVATED', (payload) => {
+    setLiveToast(`🎉 New Line Provisioned & Activated: Circuit ${payload.circuitId}`);
+    fetchAnalyticsData();
+    setTimeout(() => setLiveToast(''), 5000);
+  });
+
+  useRealtimeEvent('KYC_STATUS_UPDATED', (payload) => {
+    if (payload.kycStatus === 'VERIFIED') {
+      fetchAnalyticsData();
+    }
+  });
 
   useEffect(() => {
     fetchAnalyticsData();
@@ -45,6 +66,17 @@ const AdminAnalyticsPage = () => {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
+
+        {/* Real-Time Live Activity Notification Banner */}
+        {liveToast && (
+          <div className="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-300 text-indigo-900 text-xs font-bold flex items-center justify-between shadow-xs animate-bounce">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
+              <span>{liveToast}</span>
+            </div>
+            <button onClick={() => setLiveToast('')} className="text-indigo-700 hover:text-indigo-900 text-xs">✕</button>
+          </div>
+        )}
         
         {/* Top Header Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

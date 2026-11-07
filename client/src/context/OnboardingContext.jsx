@@ -5,6 +5,7 @@ const OnboardingContext = createContext(null);
 export const OnboardingProvider = ({ children }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedBundle, setSelectedBundle] = useState(null);
+  const [isIncrementalPurchase, setIsIncrementalPurchase] = useState(false);
   const [cartItems, setCartItems] = useState([
     { productId: 'P01', quantity: 1 },
     { productId: 'P07', quantity: 2 },
@@ -21,7 +22,19 @@ export const OnboardingProvider = ({ children }) => {
   });
   const [activeOrder, setActiveOrder] = useState(null);
 
+  const startIncrementalPurchase = (initialProductId = null) => {
+    setIsIncrementalPurchase(true);
+    setSelectedBundle(null);
+    setActiveQuote(null);
+    if (initialProductId) {
+      setCartItems([{ productId: initialProductId, quantity: 1 }]);
+    } else {
+      setCartItems([]);
+    }
+  };
+
   const setBundleFromAdvisor = (bundle) => {
+    setIsIncrementalPurchase(false);
     setSelectedBundle(bundle);
     if (bundle && bundle.recommendedProducts) {
       const items = bundle.recommendedProducts.map((p) => ({
@@ -70,6 +83,9 @@ export const OnboardingProvider = ({ children }) => {
         updateItemQuantity,
         contractDuration,
         setContractDuration,
+        isIncrementalPurchase,
+        setIsIncrementalPurchase,
+        startIncrementalPurchase,
         activeQuote,
         setActiveQuote,
         kycData,
