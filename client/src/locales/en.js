@@ -258,6 +258,9 @@ export default {
     gstInvoiceTitle: 'Monthly GST B2B Statement',
     downloadPdfBtn: 'Download Official PDF Invoice',
     downloadedAlert: 'Invoice Downloaded!',
+    lineDiagnostics: 'Line Diagnostics',
+    slaSpecs: 'SLA & Specs',
+    noServices: 'No Active Telecom Services in This Category',
   },
   partner: {
     title: 'Channel Partner Assisted Portal',

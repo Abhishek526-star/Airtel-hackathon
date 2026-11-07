@@ -19,6 +19,7 @@ const partnerRoutes = require('./routes/partnerRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const mockRoutes = require('./routes/mockRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
+const serviceRoutes = require('./routes/serviceRoutes');
 
 const app = express();
 
@@ -69,7 +70,7 @@ app.get('/api/health', (req, res) => {
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
       version: '1.0.0',
-      telecomBrand: 'Accel Business (Airtel SYNC Hackathon 2026)',
+      telecomBrand: 'Airtel Business Enterprise Solutions',
     },
     error: null,
   });
@@ -83,6 +84,7 @@ app.use('/api/advisor', advisorRoutes);
 app.use('/api/quotes', quoteRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/services', serviceRoutes);
 app.use('/api/partner', partnerRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/mock', mockRoutes);

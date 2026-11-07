@@ -359,7 +359,38 @@ async function runTests() {
       throw new Error('Partner profile update failed');
     }
 
-    console.log('\n>>> ALL 15 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    console.log('\n--- TEST 16: Active Services Retrieval & Technical Telemetry API ---');
+    const servicesRes = await request('/api/services/active', 'GET', null, customerToken);
+    console.log('Active Services HTTP:', servicesRes.status);
+    console.log('Total Services Count:', servicesRes.data.data?.services?.length);
+    console.log('Summary Circuit ID:', servicesRes.data.data?.summary?.circuitId);
+    console.log('Summary Static IP:', servicesRes.data.data?.summary?.staticIp);
+    console.log('Summary Monthly MRC: ₹' + servicesRes.data.data?.summary?.totalMonthlyRecurring);
+    if (
+      servicesRes.status !== 200 ||
+      !Array.isArray(servicesRes.data.data?.services) ||
+      servicesRes.data.data?.services.length === 0 ||
+      !servicesRes.data.data?.summary?.circuitId
+    ) {
+      throw new Error('Active services retrieval failed');
+    }
+
+    // 16b: Diagnostic Line Ping Test
+    const firstServiceCircuit = servicesRes.data.data?.services[0]?.telecomDetails?.circuitId || 'CIR-DEL-FBR-8912';
+    const diagRes = await request(
+      `/api/services/${encodeURIComponent(firstServiceCircuit)}/diagnostics`,
+      'POST',
+      null,
+      customerToken
+    );
+    console.log('Diagnostics HTTP:', diagRes.status);
+    console.log('Overall Health:', diagRes.data.data?.overallHealth);
+    console.log('Optical Carrier Status:', diagRes.data.data?.tests?.[0]?.status);
+    if (diagRes.status !== 200 || diagRes.data.data?.overallHealth !== 'OPTIMAL') {
+      throw new Error('Service network diagnostic execution failed');
+    }
+
+    console.log('\n>>> ALL 16 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {
