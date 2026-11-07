@@ -10,3 +10,4 @@ router.get('/active', serviceController.getActiveServices);
 router.post('/:id/diagnostics', serviceController.runDiagnostics);
 
 module.exports = router;
+

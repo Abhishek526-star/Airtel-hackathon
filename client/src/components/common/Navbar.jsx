@@ -13,9 +13,11 @@ import {
   LogOut, 
   LogIn, 
   Menu, 
-  X,
-  ShoppingBag,
-  User
+  X, 
+  ShoppingBag, 
+  User,
+  ChevronRight,
+  ArrowRight
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -24,6 +26,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
+  // Core subscriber journey navigation
   const navLinks = [
     { label: t('navbar.advisor', 'AI Advisor'), path: '/advisor', icon: Sparkles },
     { label: t('navbar.quote', 'Quote Builder'), path: '/quote', icon: FileText },
@@ -31,40 +34,44 @@ const Navbar = () => {
     { label: t('navbar.catalogue', 'Catalogue'), path: '/catalogue', icon: ShoppingBag },
   ];
 
+  // Contextual authenticated workspace
   if (isAuthenticated) {
     if (user?.role === 'customer') {
       navLinks.push({ label: t('navbar.myBusiness', 'My Business'), path: '/dashboard', icon: LayoutDashboard });
     } else if (user?.role === 'partner') {
-      navLinks.push({ label: t('navbar.partnerPortal', 'Partner Portal'), path: '/partner', icon: Users });
+      navLinks.push({ label: t('navbar.partnerPortal', 'Partner Workspace'), path: '/partner', icon: Users });
     } else if (user?.role === 'admin') {
       navLinks.push({ label: t('navbar.adminAnalytics', 'Executive Analytics'), path: '/admin', icon: BarChart3 });
     }
-    navLinks.push({ label: t('navbar.profile', 'Profile'), path: '/profile', icon: User });
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* Brand Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-airtel-700 to-airtel-500 flex items-center justify-center text-white shadow-md shadow-red-500/20 group-hover:scale-105 transition-transform">
-              <span className="font-extrabold text-lg tracking-wider">A</span>
+          {/* Brand Logo & Identity */}
+          <Link to="/" className="flex items-center space-x-3 group flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-airtel-700 via-red-600 to-rose-600 flex items-center justify-center text-white shadow-md shadow-red-500/25 group-hover:scale-105 transition-transform">
+              <span className="font-black text-lg tracking-wider">A</span>
             </div>
-            <div>
+            <div className="flex flex-col">
               <div className="flex items-center space-x-1.5">
-                <span className="font-extrabold text-slate-900 tracking-tight text-lg">Project Udyam</span>
-                <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-airtel-700">DIGITAL</span>
+                <span className="font-black text-slate-900 tracking-tight text-base sm:text-lg">
+                  Airtel <span className="text-airtel-600">Business</span>
+                </span>
+                <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full bg-red-50 text-airtel-700 border border-red-200/60 uppercase tracking-wider">
+                  UDYAM
+                </span>
               </div>
-              <p className="text-[10px] text-slate-500 font-medium tracking-wide">
-                {t('common.brandTagline', 'Airtel Business | Enterprise Digital Solutions')}
+              <p className="text-[10px] text-slate-400 font-medium tracking-tight">
+                Enterprise Digital Solutions
               </p>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <nav className="hidden lg:flex items-center space-x-1">
             {navLinks.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -72,13 +79,13 @@ const Navbar = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-xs transition-all ${
                     isActive
-                      ? 'bg-red-50 text-airtel-700 font-semibold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      ? 'bg-red-50 text-airtel-700 font-extrabold border border-red-200/70 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-semibold'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-airtel-600' : 'text-slate-400'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-airtel-600' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -92,31 +99,49 @@ const Navbar = () => {
 
             {/* Auth Actions */}
             {isAuthenticated ? (
-              <div className="flex items-center space-x-3 pl-2 border-l border-slate-200">
+              <div className="flex items-center space-x-2 pl-3 border-l border-slate-200">
+                {/* User Profile Pill Card */}
                 <Link
                   to="/profile"
-                  className="flex items-center space-x-2.5 p-1.5 rounded-xl hover:bg-slate-100 transition-colors group text-right"
+                  className="flex items-center space-x-2.5 px-2.5 py-1.5 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-all group"
                   title="View & Edit Profile"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-red-50 text-airtel-700 border border-red-200 flex items-center justify-center font-bold text-xs group-hover:scale-105 transition-transform">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-slate-900 to-slate-800 text-white flex items-center justify-center font-black text-xs shadow-xs group-hover:scale-105 transition-transform">
                     {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-800 leading-tight group-hover:text-airtel-700 transition-colors">
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-slate-900 leading-tight group-hover:text-airtel-700 transition-colors truncate max-w-[120px]">
                       {user?.fullName || 'User'}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-                      {user?.role === 'customer'
-                        ? 'MSME Customer'
-                        : user?.role === 'partner'
-                        ? 'Sales Partner'
-                        : 'Executive Admin'}
+                    <span className="text-[10px] font-semibold flex items-center space-x-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        user?.role === 'customer'
+                          ? 'bg-emerald-500'
+                          : user?.role === 'partner'
+                          ? 'bg-red-500'
+                          : 'bg-indigo-500'
+                      }`} />
+                      <span className={
+                        user?.role === 'customer'
+                          ? 'text-emerald-700 font-bold'
+                          : user?.role === 'partner'
+                          ? 'text-red-700 font-bold'
+                          : 'text-indigo-700 font-bold'
+                      }>
+                        {user?.role === 'customer'
+                          ? 'MSME Client'
+                          : user?.role === 'partner'
+                          ? 'Sales Partner'
+                          : 'Admin'}
+                      </span>
                     </span>
                   </div>
                 </Link>
+
+                {/* Sign Out Button */}
                 <button
                   onClick={logout}
-                  className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-all"
+                  className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200/80 hover:border-red-200 transition-all shadow-xs"
                   title={t('common.signOut', 'Sign Out')}
                 >
                   <LogOut className="w-4 h-4" />
@@ -141,42 +166,60 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Right Bar: Language + Menu */}
+          {/* Mobile Right Bar: Language + Menu Toggle */}
           <div className="flex md:hidden items-center space-x-2">
             <LanguageSelector compact={true} />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+              className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 border border-slate-200"
               aria-label="Toggle Navigation Menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
 
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-2 pb-6 space-y-3">
+        <div className="md:hidden border-t border-slate-200 bg-white/98 backdrop-blur-md px-4 pt-3 pb-6 space-y-4 shadow-xl">
+          
+          {/* Section 1: Enterprise Journey */}
           <div className="space-y-1">
+            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-3 py-1">
+              Enterprise Solutions
+            </div>
             {navLinks.map((item) => {
               const Icon = item.icon;
+              const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-red-50 hover:text-airtel-700"
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                    isActive
+                      ? 'bg-red-50 text-airtel-700 font-extrabold border border-red-200'
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`}
                 >
-                  <Icon className="w-5 h-5 text-slate-400" />
-                  <span>{item.label}</span>
+                  <div className="flex items-center space-x-3">
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-airtel-600' : 'text-slate-400'}`} />
+                    <span>{item.label}</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-300" />
                 </Link>
               );
             })}
           </div>
 
-          <div className="pt-3 border-t border-slate-100">
+          {/* Section 2: Account & Operations */}
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-3">
+              My Account
+            </div>
+
             {isAuthenticated ? (
               <div className="space-y-2">
                 <Link
@@ -185,7 +228,7 @@ const Navbar = () => {
                   className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
                 >
                   <div className="flex items-center space-x-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-red-100 text-airtel-700 flex items-center justify-center font-bold text-xs">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-slate-800 text-white flex items-center justify-center font-bold text-xs">
                       {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <div>
@@ -199,17 +242,21 @@ const Navbar = () => {
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-airtel-700">View Profile &rarr;</span>
+                  <span className="text-xs font-bold text-airtel-700 flex items-center space-x-1">
+                    <span>Profile</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
                 </Link>
+
                 <button
                   onClick={() => { logout(); setMobileMenuOpen(false); }}
-                  className="w-full py-2 rounded-xl bg-white border border-slate-200 text-red-600 font-bold text-xs hover:bg-red-50"
+                  className="w-full py-2.5 rounded-xl bg-white border border-slate-200 text-red-600 font-bold text-xs hover:bg-red-50 transition-colors"
                 >
                   {t('common.signOut', 'Sign Out')}
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="grid grid-cols-2 gap-2 text-center pt-1">
                 <Link
                   to="/login"
                   onClick={() => setMobileMenuOpen(false)}
@@ -227,6 +274,7 @@ const Navbar = () => {
               </div>
             )}
           </div>
+
         </div>
       )}
     </header>
