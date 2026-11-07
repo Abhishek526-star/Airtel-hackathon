@@ -53,10 +53,13 @@ exports.getProfile = async (req, res, next) => {
           role: user.role,
           agencyName: user.agencyName || '',
           partnerCode: user.partnerCode || '',
+          badgeId: user.badgeId || '',
+          specialization: user.specialization || '',
           territoryCircle: user.territoryCircle || 'Delhi NCR',
           isAvailable: user.isAvailable ?? true,
           availabilityStatus: user.availabilityStatus || 'AVAILABLE',
           activeAssignedLeadsCount: user.activeAssignedLeadsCount || 0,
+          activeAssignedInstallationsCount: user.activeAssignedInstallationsCount || 0,
         },
         businessProfile: profile,
         kyc: {

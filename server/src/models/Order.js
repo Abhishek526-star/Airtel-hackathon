@@ -72,6 +72,11 @@ const orderSchema = new mongoose.Schema(
       paidAt: { type: Date, default: Date.now },
       mode: { type: String, default: 'Corporate Net Banking / Mandate (ECS)' },
     },
+    assignedTechnician: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+    },
     installationDetails: {
       installationAddress: { type: String, default: '' },
       city: { type: String, default: 'Delhi NCR' },

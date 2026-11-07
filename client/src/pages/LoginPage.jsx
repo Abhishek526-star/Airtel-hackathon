@@ -26,6 +26,7 @@ const LoginPage = () => {
       const loggedInUser = await login(identifier.trim(), password);
       if (loggedInUser.role === 'admin') navigate('/admin');
       else if (loggedInUser.role === 'partner') navigate('/partner');
+      else if (loggedInUser.role === 'technician') navigate('/technician');
       else navigate(redirectPath);
     } catch (err) {
       setErrorMsg(err.message || 'Invalid credentials. Please verify your email/phone and password.');

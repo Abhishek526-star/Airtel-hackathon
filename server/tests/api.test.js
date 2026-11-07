@@ -390,7 +390,142 @@ async function runTests() {
       throw new Error('Service network diagnostic execution failed');
     }
 
-    console.log('\n>>> ALL 16 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
+    console.log('\n--- TEST 17: Field Technician Authentication & Dynamic Work Order Routing ---');
+    // 17a: Authenticate as Field Technician Ramesh Kumar
+    const techLogin = await request('/api/auth/login', 'POST', {
+      identifier: 'tech.ramesh@accel.com',
+      password: 'Password@123',
+    });
+    console.log('Tech Login HTTP:', techLogin.status);
+    console.log('Tech Name:', techLogin.data.data?.user?.fullName);
+    console.log('Tech Role:', techLogin.data.data?.user?.role);
+    console.log('Tech Badge ID:', techLogin.data.data?.user?.badgeId);
+    console.log('Tech Circle:', techLogin.data.data?.user?.territoryCircle);
+
+    if (
+      techLogin.status !== 200 ||
+      techLogin.data.data?.user?.role !== 'technician' ||
+      techLogin.data.data?.user?.badgeId !== 'ENG-DELHI-408'
+    ) {
+      throw new Error('Field technician authentication failed');
+    }
+    const techToken = techLogin.data.data?.token;
+
+    // 17b: Fetch Technician Assigned Tasks
+    const techTasks = await request('/api/technician/tasks', 'GET', null, techToken);
+    console.log('Tech Tasks HTTP:', techTasks.status);
+    console.log('Assigned Tasks Count:', techTasks.data.data?.tasks?.length);
+    console.log('Technician Stats:', techTasks.data.data?.stats);
+    if (techTasks.status !== 200 || !Array.isArray(techTasks.data.data?.tasks)) {
+      throw new Error('Technician tasks retrieval failed');
+    }
+
+    // 17c: Dynamic Order Routing Test - Place Order in Delhi NCR
+    const quoteGen = await request(
+      '/api/quotes',
+      'POST',
+      {
+        items: [
+          { productId: 'P01', quantity: 1 },
+          { productId: 'P06', quantity: 1 },
+        ],
+        contractDurationMonths: 12,
+      },
+      customerToken
+    );
+    const newQuoteId = quoteGen.data.data?.quoteId;
+
+    const newOrderRes = await request(
+      '/api/orders',
+      'POST',
+      {
+        quoteId: newQuoteId,
+        installationAddress: 'Unit 402, Technology Park, Okhla Phase 3',
+        city: 'Delhi NCR',
+        pincode: '110020',
+        contactPerson: 'Rajesh Gupta',
+        contactPhone: '9810123457',
+        timeSlot: '10:00 AM - 01:00 PM',
+      },
+      customerToken
+    );
+    console.log('New Order HTTP:', newOrderRes.status);
+    console.log('New Order ID:', newOrderRes.data.data?.orderId);
+    console.log('Assigned Tech ID:', newOrderRes.data.data?.assignedTechnician);
+    console.log('Assigned Engineer Name:', newOrderRes.data.data?.installationDetails?.assignedEngineer?.name);
+    console.log('Assigned Engineer Badge:', newOrderRes.data.data?.installationDetails?.assignedEngineer?.badgeId);
+
+    if (
+      newOrderRes.status !== 201 ||
+      !newOrderRes.data.data?.assignedTechnician ||
+      newOrderRes.data.data?.installationDetails?.assignedEngineer?.badgeId !== 'ENG-DELHI-408'
+    ) {
+      throw new Error('Dynamic technician assignment routing failed');
+    }
+
+    const testOrderId = newOrderRes.data.data?.orderId;
+
+    // 17d: Technician Advances Task to INSTALLATION_IN_PROGRESS
+    const startInstallRes = await request(
+      `/api/technician/tasks/${testOrderId}/status`,
+      'PATCH',
+      {
+        nextStatus: 'INSTALLATION_IN_PROGRESS',
+        notes: 'Technician Ramesh Kumar on site at Okhla Phase 3. Optical drop terminated.',
+      },
+      techToken
+    );
+    console.log('Start Install HTTP:', startInstallRes.status);
+    console.log('Updated Status:', startInstallRes.data.data?.orderStatus);
+    if (startInstallRes.status !== 200 || startInstallRes.data.data?.orderStatus !== 'INSTALLATION_IN_PROGRESS') {
+      throw new Error('Technician failed to advance order to INSTALLATION_IN_PROGRESS');
+    }
+
+    // 17e: Technician Executes Optical Diagnostics & Activates Service
+    const activateRes = await request(
+      `/api/technician/tasks/${testOrderId}/status`,
+      'PATCH',
+      {
+        nextStatus: 'ACTIVATED',
+        notes: 'Optical power verified at -19.2 dBm. Nokia ONT provisioned and static IP live.',
+        opticalPowerRx: -19.2,
+        opticalPowerTx: 2.4,
+        cpeSerialNumber: 'ONT-NOKIA-XS-994821',
+        staticIp: '103.24.188.99',
+      },
+      techToken
+    );
+    console.log('Activation HTTP:', activateRes.status);
+    console.log('Activated Status:', activateRes.data.data?.orderStatus);
+    console.log('Circuit ID:', activateRes.data.data?.serviceActivation?.circuitId);
+    console.log('Static IP:', activateRes.data.data?.serviceActivation?.assignedStaticIp);
+    console.log('ONT Serial:', activateRes.data.data?.serviceActivation?.cpeSerialNumber);
+
+    if (
+      activateRes.status !== 200 ||
+      activateRes.data.data?.orderStatus !== 'ACTIVATED' ||
+      !activateRes.data.data?.serviceActivation?.circuitId
+    ) {
+      throw new Error('Technician service activation lifecycle failed');
+    }
+
+    // 17f: Technician Availability Toggle
+    const availRes = await request(
+      '/api/technician/availability',
+      'PATCH',
+      {
+        availabilityStatus: 'ON_TASK',
+        isAvailable: true,
+      },
+      techToken
+    );
+    console.log('Availability Update HTTP:', availRes.status);
+    console.log('New Availability Status:', availRes.data.data?.availabilityStatus);
+    if (availRes.status !== 200 || availRes.data.data?.availabilityStatus !== 'ON_TASK') {
+      throw new Error('Technician availability update failed');
+    }
+
+    console.log('\n>>> ALL 17 AUTOMATED SUBSYSTEM TESTS ON OFFICIAL COMPANY DATA PASSED! <<<');
   } catch (err) {
     console.error('Test failed:', err);
   } finally {

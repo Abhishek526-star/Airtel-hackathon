@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Quote = require('../models/Quote');
 const BusinessProfile = require('../models/BusinessProfile');
 const KYCDocument = require('../models/KYCDocument');
+const User = require('../models/User');
 
 const generateOrderId = () => {
   const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -24,8 +25,17 @@ exports.createOrder = async (req, res, next) => {
       timeSlot,
     } = req.body;
 
+    if (!quoteId) {
+      return res.status(400).json({
+        success: false,
+        message: 'quoteId is required to create an order.',
+        data: null,
+        error: { code: 'MISSING_QUOTE_ID' },
+      });
+    }
+
     const quote = await Quote.findOne({
-      $or: [{ quoteId }, { _id: quoteId.match(/^[0-9a-fA-F]{24}$/) ? quoteId : null }],
+      $or: [{ quoteId }, { _id: (typeof quoteId === 'string' && quoteId.match(/^[0-9a-fA-F]{24}$/)) ? quoteId : null }],
     });
 
     if (!quote) {
@@ -69,11 +79,66 @@ exports.createOrder = async (req, res, next) => {
       });
     }
 
+    const targetCity = city || (profile && profile.address ? profile.address.city : 'Delhi NCR');
+
+    // Dynamic field technician routing based on operational circle & load balancing
+    let assignedTech = null;
+    try {
+      // 1. Prioritize available technician in matching circle
+      assignedTech = await User.findOne({
+        role: 'technician',
+        availabilityStatus: 'AVAILABLE',
+        territoryCircle: new RegExp(targetCity, 'i'),
+      }).sort({ activeAssignedInstallationsCount: 1 });
+
+      // 2. If none strictly AVAILABLE, assign any non-OFFLINE technician in the circle
+      if (!assignedTech) {
+        assignedTech = await User.findOne({
+          role: 'technician',
+          availabilityStatus: { $ne: 'OFFLINE' },
+          territoryCircle: new RegExp(targetCity, 'i'),
+        }).sort({ activeAssignedInstallationsCount: 1 });
+      }
+
+      // 3. If all in circle are busy/offline, assign the lowest-loaded technician in the circle
+      if (!assignedTech) {
+        assignedTech = await User.findOne({
+          role: 'technician',
+          territoryCircle: new RegExp(targetCity, 'i'),
+        }).sort({ activeAssignedInstallationsCount: 1 });
+      }
+
+      // 4. Fallback to lowest loaded active technician in fleet
+      if (!assignedTech) {
+        assignedTech = await User.findOne({
+          role: 'technician',
+          isAvailable: true,
+        }).sort({ activeAssignedInstallationsCount: 1 });
+      }
+
+      // 5. Ultimate fallback to any technician
+      if (!assignedTech) {
+        assignedTech = await User.findOne({ role: 'technician' });
+      }
+
+      if (assignedTech) {
+        assignedTech.activeAssignedInstallationsCount = (assignedTech.activeAssignedInstallationsCount || 0) + 1;
+        await assignedTech.save();
+      }
+    } catch (techErr) {
+      console.warn('[Technician Assignment Error]', techErr.message);
+    }
+
+    const techName = assignedTech ? assignedTech.fullName : 'Ramesh Kumar';
+    const techPhone = assignedTech ? assignedTech.phone : '+91 98110 54321';
+    const techBadge = assignedTech ? assignedTech.badgeId : 'ENG-DELHI-408';
+
     const order = await Order.create({
       orderId,
       user: req.user._id,
       businessProfile: profile ? profile._id : null,
       quote: quote._id,
+      assignedTechnician: assignedTech ? assignedTech._id : null,
       orderStatus: initialOrderStatus,
       kycStatus: initialKycStatus,
       paymentStatus: 'SIMULATED_PAID',
@@ -83,16 +148,16 @@ exports.createOrder = async (req, res, next) => {
       },
       installationDetails: {
         installationAddress: installationAddress || (profile && profile.address ? profile.address.street : 'Main Market Road'),
-        city: city || (profile && profile.address ? profile.address.city : 'Delhi NCR'),
+        city: targetCity,
         pincode: pincode || (profile && profile.address ? profile.address.pincode : '110001'),
         contactPerson: contactPerson || req.user.fullName,
         contactPhone: contactPhone || req.user.phone,
         scheduledDate: scheduledDateTime,
         timeSlot: timeSlot || '10:00 AM - 01:00 PM',
         assignedEngineer: {
-          name: 'Ramesh Kumar',
-          phone: '+91 98110 54321',
-          badgeId: 'ENG-DELHI-408',
+          name: techName,
+          phone: techPhone,
+          badgeId: techBadge,
         },
       },
       timeline,
@@ -121,6 +186,7 @@ exports.getUserOrders = async (req, res, next) => {
     const orders = await Order.find({ user: req.user._id })
       .populate('quote')
       .populate('businessProfile')
+      .populate('assignedTechnician', 'fullName phone badgeId specialization territoryCircle')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -143,7 +209,8 @@ exports.getOrderById = async (req, res, next) => {
       $or: [{ orderId: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
     })
       .populate('quote')
-      .populate('businessProfile');
+      .populate('businessProfile')
+      .populate('assignedTechnician', 'fullName phone badgeId specialization territoryCircle');
 
     if (!order) {
       return res.status(404).json({

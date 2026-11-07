@@ -18,6 +18,7 @@ import OrderTrackerPage from './pages/OrderTrackerPage';
 import CustomerDashboardPage from './pages/CustomerDashboardPage';
 import PartnerDashboardPage from './pages/PartnerDashboardPage';
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
+import TechnicianDashboardPage from './pages/TechnicianDashboardPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
@@ -62,11 +63,11 @@ const AppContent = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Dedicated Profile Route for Customers & Partners */}
+          {/* Dedicated Profile Route */}
           <Route
             path="/profile"
             element={
-              <ProtectedRoute allowedRoles={['customer', 'partner', 'admin']}>
+              <ProtectedRoute allowedRoles={['customer', 'partner', 'admin', 'technician']}>
                 <ProfilePage />
               </ProtectedRoute>
             }
@@ -86,6 +87,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute allowedRoles={['partner', 'admin']}>
                 <PartnerDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/technician"
+            element={
+              <ProtectedRoute allowedRoles={['technician', 'admin']}>
+                <TechnicianDashboardPage />
               </ProtectedRoute>
             }
           />

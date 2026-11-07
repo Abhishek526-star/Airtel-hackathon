@@ -24,7 +24,9 @@ import {
   ArrowRight,
   TrendingUp,
   Sparkles,
-  Power
+  Power,
+  HardHat,
+  Wrench
 } from 'lucide-react';
 
 const ProfilePage = () => {
@@ -182,6 +184,7 @@ const ProfilePage = () => {
 
   const isCustomer = currentUser?.role === 'customer';
   const isPartner = currentUser?.role === 'partner';
+  const isTechnician = currentUser?.role === 'technician';
   const isAdmin = currentUser?.role === 'admin';
 
   return (
@@ -224,6 +227,8 @@ const ProfilePage = () => {
                     <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center font-extrabold text-2xl text-white shadow-inner">
                       {isPartner ? (
                         <Briefcase className="w-8 h-8 text-red-400" />
+                      ) : isTechnician ? (
+                        <HardHat className="w-8 h-8 text-amber-400" />
                       ) : isAdmin ? (
                         <Radio className="w-8 h-8 text-sky-400" />
                       ) : (
@@ -234,7 +239,7 @@ const ProfilePage = () => {
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/15 text-slate-200 border border-white/10">
-                          {isPartner ? 'Airtel Channel Partner' : isAdmin ? 'Airtel Executive Admin' : 'MSME Enterprise Customer'}
+                          {isPartner ? 'Airtel Channel Partner' : isTechnician ? 'Airtel Field Engineer' : isAdmin ? 'Airtel Executive Admin' : 'MSME Enterprise Customer'}
                         </span>
                         {kyc.isCompleted && isCustomer && (
                           <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center space-x-1">
@@ -247,16 +252,23 @@ const ProfilePage = () => {
                             Partner Code: {currentUser?.partnerCode || 'CP-DEL-101'}
                           </span>
                         )}
+                        {isTechnician && (
+                          <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                            Badge: {currentUser?.badgeId || 'ENG-DELHI-408'}
+                          </span>
+                        )}
                       </div>
 
                       <h1 className="text-2xl font-black tracking-tight text-white">
                         {isPartner
                           ? currentUser?.agencyName || `${currentUser?.fullName} Solutions`
+                          : isTechnician
+                          ? currentUser?.fullName || 'Field Technician'
                           : business?.tradeName || currentUser?.fullName || 'Business Profile'}
                       </h1>
                       
                       <p className="text-xs text-slate-300 flex flex-wrap items-center gap-3">
-                        <span>Legal Entity: <strong>{isPartner ? currentUser?.fullName : (business?.legalName || currentUser?.fullName)}</strong></span>
+                        <span>Legal Entity: <strong>{isPartner || isTechnician ? currentUser?.fullName : (business?.legalName || currentUser?.fullName)}</strong></span>
                         <span>&bull;</span>
                         <span className="flex items-center space-x-1">
                           <MapPin className="w-3.5 h-3.5 text-slate-400" />
@@ -317,6 +329,11 @@ const ProfilePage = () => {
                   ) : isPartner ? (
                     <Link to="/partner" className="text-airtel-700 font-bold hover:underline flex items-center space-x-1">
                       <span>Assisted Onboarding Portal</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  ) : isTechnician ? (
+                    <Link to="/technician" className="text-amber-700 font-bold hover:underline flex items-center space-x-1">
+                      <span>Field Installation Tasks</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   ) : (

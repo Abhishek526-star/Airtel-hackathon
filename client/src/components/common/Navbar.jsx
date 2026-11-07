@@ -17,7 +17,8 @@ import {
   ShoppingBag, 
   User,
   ChevronRight,
-  ArrowRight
+  ArrowRight,
+  HardHat
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -40,6 +41,8 @@ const Navbar = () => {
       navLinks.push({ label: t('navbar.myBusiness', 'My Business'), path: '/dashboard', icon: LayoutDashboard });
     } else if (user?.role === 'partner') {
       navLinks.push({ label: t('navbar.partnerPortal', 'Partner Workspace'), path: '/partner', icon: Users });
+    } else if (user?.role === 'technician') {
+      navLinks.push({ label: t('navbar.fieldTasks', 'Field Tasks'), path: '/technician', icon: HardHat });
     } else if (user?.role === 'admin') {
       navLinks.push({ label: t('navbar.adminAnalytics', 'Executive Analytics'), path: '/admin', icon: BarChart3 });
     }
@@ -119,6 +122,8 @@ const Navbar = () => {
                           ? 'bg-emerald-500'
                           : user?.role === 'partner'
                           ? 'bg-red-500'
+                          : user?.role === 'technician'
+                          ? 'bg-amber-500'
                           : 'bg-indigo-500'
                       }`} />
                       <span className={
@@ -126,12 +131,16 @@ const Navbar = () => {
                           ? 'text-emerald-700 font-bold'
                           : user?.role === 'partner'
                           ? 'text-red-700 font-bold'
+                          : user?.role === 'technician'
+                          ? 'text-amber-700 font-bold'
                           : 'text-indigo-700 font-bold'
                       }>
                         {user?.role === 'customer'
                           ? 'MSME Client'
                           : user?.role === 'partner'
                           ? 'Sales Partner'
+                          : user?.role === 'technician'
+                          ? 'Field Engineer'
                           : 'Admin'}
                       </span>
                     </span>
@@ -238,6 +247,8 @@ const Navbar = () => {
                           ? 'MSME Customer'
                           : user?.role === 'partner'
                           ? 'Sales Partner'
+                          : user?.role === 'technician'
+                          ? 'Field Engineer'
                           : 'Executive Admin'}
                       </div>
                     </div>

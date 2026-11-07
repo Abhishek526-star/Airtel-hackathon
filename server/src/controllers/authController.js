@@ -41,7 +41,7 @@ exports.register = async (req, res, next) => {
       });
     }
 
-    const assignedRole = role && ['customer', 'partner', 'admin'].includes(role) ? role : 'customer';
+    const assignedRole = role && ['customer', 'partner', 'admin', 'technician'].includes(role) ? role : 'customer';
     const isPartner = assignedRole === 'partner';
 
     const circleClean = (territoryCircle || 'DEL').slice(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
@@ -96,9 +96,12 @@ exports.register = async (req, res, next) => {
           agencyName: user.agencyName,
           partnerCode: user.partnerCode,
           territoryCircle: user.territoryCircle,
+          badgeId: user.badgeId || '',
+          specialization: user.specialization || '',
           isAvailable: user.isAvailable,
           availabilityStatus: user.availabilityStatus,
           activeAssignedLeadsCount: user.activeAssignedLeadsCount,
+          activeAssignedInstallationsCount: user.activeAssignedInstallationsCount || 0,
           businessProfile: profile,
         },
       },
@@ -169,10 +172,13 @@ exports.login = async (req, res, next) => {
           role: user.role,
           agencyName: user.agencyName,
           partnerCode: user.partnerCode,
+          badgeId: user.badgeId || '',
+          specialization: user.specialization || '',
           territoryCircle: user.territoryCircle,
           isAvailable: user.isAvailable,
           availabilityStatus: user.availabilityStatus,
           activeAssignedLeadsCount: user.activeAssignedLeadsCount,
+          activeAssignedInstallationsCount: user.activeAssignedInstallationsCount || 0,
           businessProfile: user.businessProfile,
         },
       },
@@ -201,10 +207,13 @@ exports.getMe = async (req, res, next) => {
           role: user.role,
           agencyName: user.agencyName,
           partnerCode: user.partnerCode,
+          badgeId: user.badgeId || '',
+          specialization: user.specialization || '',
           territoryCircle: user.territoryCircle,
           isAvailable: user.isAvailable,
           availabilityStatus: user.availabilityStatus,
           activeAssignedLeadsCount: user.activeAssignedLeadsCount,
+          activeAssignedInstallationsCount: user.activeAssignedInstallationsCount || 0,
           businessProfile: user.businessProfile,
         },
       },

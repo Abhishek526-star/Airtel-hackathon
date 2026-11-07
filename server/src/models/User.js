@@ -30,11 +30,11 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['customer', 'partner', 'admin'],
+      enum: ['customer', 'partner', 'admin', 'technician'],
       default: 'customer',
       index: true,
     },
-    // Partner-specific credentials and assigned circle
+    // Partner & Technician credentials and assigned operational circle
     agencyName: {
       type: String,
       trim: true,
@@ -45,12 +45,22 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    badgeId: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    specialization: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     territoryCircle: {
       type: String,
       trim: true,
       default: 'Delhi NCR',
     },
-    // Partner live availability status & load balancing
+    // Partner & Technician live availability status & load balancing
     isAvailable: {
       type: Boolean,
       default: true,
@@ -58,11 +68,16 @@ const userSchema = new mongoose.Schema(
     },
     availabilityStatus: {
       type: String,
-      enum: ['AVAILABLE', 'BUSY', 'OFFLINE'],
+      enum: ['AVAILABLE', 'BUSY', 'ON_TASK', 'OFFLINE'],
       default: 'AVAILABLE',
       index: true,
     },
     activeAssignedLeadsCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    activeAssignedInstallationsCount: {
       type: Number,
       default: 0,
       min: 0,

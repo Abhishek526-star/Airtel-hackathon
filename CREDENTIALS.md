@@ -18,6 +18,9 @@
 | **Sales Channel Partner** | **Rohit Deshmukh**<br>(Mumbai West Telecom Agency) | `rohit.mumbai@accel.com` | `9820011223` | `Password@123` | **Mumbai Metro**<br>(*Code: `CP-MUM-201`*) | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
 | **Sales Channel Partner** | **Karthik Reddy**<br>(Silicon City Enterprise Net) | `karthik.blr@accel.com` | `9845011224` | `Password@123` | **Bengaluru Urban**<br>(*Code: `CP-BLR-301`*) | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
 | **Sales Channel Partner** | **Sachin Patil**<br>(Pune Metro Digital Connect) | `sachin.pune@accel.com` | `9850011225` | `Password@123` | **Pune Hub**<br>(*Code: `CP-PUN-401`*) | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
+| **Field Technician** | **Ramesh Kumar**<br>(Airtel Enterprise Field Engineer) | `tech.ramesh@accel.com` | `9811054321` | `Password@123` | **Delhi NCR**<br>(*Badge: `ENG-DELHI-408`*) | [Field Tasks (`/technician`)](http://localhost:5173/technician) |
+| **Field Technician** | **Suresh Patil**<br>(Airtel Enterprise Field Engineer) | `tech.suresh@accel.com` | `9820054321` | `Password@123` | **Mumbai Metro**<br>(*Badge: `ENG-MUM-502`*) | [Field Tasks (`/technician`)](http://localhost:5173/technician) |
+| **Field Technician** | **Ganesh Iyer**<br>(Airtel Enterprise Field Engineer) | `tech.blr@accel.com` | `9845054321` | `Password@123` | **Bengaluru Urban**<br>(*Badge: `ENG-BLR-603`*) | [Field Tasks (`/technician`)](http://localhost:5173/technician) |
 | **Executive Admin** | **Priya Nair**<br>(Head of SME Growth & Digital Acq.) | `admin@accel.com` | `9988776655` | `Password@123` | **Pan-India**<br>(*All 22 Telecom Circles*) | [Executive Analytics (`/admin`)](http://localhost:5173/admin) |
 
 ---
@@ -95,7 +98,43 @@ Empowers local telecom franchise agents and field executives with lead pipelines
 
 ---
 
-### 2.3 Executive Administration
+### 2.3 Enterprise Field Technicians (Optical CPE & Line Engineers)
+Empowers certified on-site field engineers to receive installation work orders, inspect commercial premises, terminate optical fiber drop cables, calibrate optical power levels, bind Nokia/Huawei ONT CPE hardware, and trigger live circuit activation.
+
+#### 1. Delhi NCR Circle:
+- **Field Engineer:** Ramesh Kumar
+  - **Email / User ID:** `tech.ramesh@accel.com`
+  - **Phone / User ID:** `9811054321`
+  - **Password:** `Password@123`
+  - **Badge ID:** `ENG-DELHI-408`
+  - **Specialization:** Enterprise Fiber Splicing, GPON ONT & SD-WAN
+  - **Operational Circle:** Delhi NCR
+
+#### 2. Mumbai Metro Circle:
+- **Field Engineer:** Suresh Patil
+  - **Email / User ID:** `tech.suresh@accel.com`
+  - **Phone / User ID:** `9820054321`
+  - **Password:** `Password@123`
+  - **Badge ID:** `ENG-MUM-502`
+  - **Specialization:** Enterprise CPE & High-Bandwidth DIA
+  - **Operational Circle:** Mumbai Metro
+
+#### 3. Bengaluru Urban Circle:
+- **Field Engineer:** Ganesh Iyer
+  - **Email / User ID:** `tech.blr@accel.com`
+  - **Phone / User ID:** `9845054321`
+  - **Password:** `Password@123`
+  - **Badge ID:** `ENG-BLR-603`
+  - **Specialization:** Direct Cloud Connect & SD-WAN
+  - **Operational Circle:** Bengaluru Urban
+
+**Key Field Technician Features Accessible:**
+- [Field Tasks Portal (`/technician`)](http://localhost:5173/technician) — Assigned work order queue, on-site contact details with 1-click call, optical power meter (Rx: `-19.2 dBm`), ONT serial provisioner, static IP allocator, and 1-click live activation.
+- [Technician Profile (`/profile`)](http://localhost:5173/profile) — Engineer Badge ID, territory circle, and field duty mode selector (`🟢 Available`, `🟡 On Site`, `⚪ Offline`).
+
+---
+
+### 2.4 Executive Administration
 Designed for telecom leadership and digital acquisition heads to monitor national acquisition economics and circle conversion funnels.
 
 - **Lead Executive:** Priya Nair (Head of SME Growth & Digital Acquisition)
@@ -159,3 +198,15 @@ In addition to pre-configured accounts, you can register new accounts with dedic
 3. Click **"Line Diagnostics"** on Biz Fibre 300 to run an interactive optical carrier and ping latency test.
 4. Click **"SLA & Specs"** to view Static IPv4 configuration and 24x7 NOC escalation hotline.
 5. Click **"Download Official PDF Invoice"** to download the B2B GST tax statement vector PDF.
+
+### Scenario D: Testing Field Technician Dynamic Assignment & Service Activation
+1. Sign in as **Sneha Rao** (`sneha@saffronbakers.in` / `Password@123`) or **Rajesh Gupta** (`rajesh@guptasupermart.in`).
+2. Go through the Quote Builder (`/quote`) and Checkout (`/checkout`). Place an order for on-site CPE installation in **Delhi NCR**.
+3. The system dynamically queries the operational circle and assigns **Ramesh Kumar** (`ENG-DELHI-408`), linking the technician's database record to the order.
+4. Sign out and sign in as **Ramesh Kumar** (`tech.ramesh@accel.com` / `Password@123`).
+5. Notice automatic redirection to **Field Tasks Portal (`/technician`)**. The new order is present in Ramesh's assigned work queue with complete customer contact and site address.
+6. Click **"Start On-Site Installation"** to move the task to `INSTALLATION_IN_PROGRESS`.
+7. Click **"Launch Optical Diagnostics & Activate"**, inspect the simulated optical power meter (`-19.2 dBm`), verify ONT Serial (`ONT-NOKIA-XS-XXXX`), and click **"Confirm Live Activation"**.
+8. Sign back in as the customer: the order tracker shows `ACTIVATED`, and the new line appears instantly under **Active Services** in **My Business (`/dashboard`)**.
+
+

@@ -300,6 +300,65 @@ const seedAll = async () => {
       }
     }
 
+    // Demo Field Technicians across Circles for On-Site CPE Installation & Activation
+    const demoTechnicians = [
+      {
+        fullName: 'Ramesh Kumar',
+        email: 'tech.ramesh@accel.com',
+        phone: '9811054321',
+        password: 'Password@123',
+        role: 'technician',
+        badgeId: 'ENG-DELHI-408',
+        specialization: 'Fiber Splicing, GPON ONT & SD-WAN',
+        territoryCircle: 'Delhi NCR',
+        isAvailable: true,
+        availabilityStatus: 'AVAILABLE',
+        activeAssignedInstallationsCount: 0,
+      },
+      {
+        fullName: 'Suresh Patil',
+        email: 'tech.suresh@accel.com',
+        phone: '9820054321',
+        password: 'Password@123',
+        role: 'technician',
+        badgeId: 'ENG-MUM-502',
+        specialization: 'Enterprise CPE & High-Bandwidth DIA',
+        territoryCircle: 'Mumbai Metro',
+        isAvailable: true,
+        availabilityStatus: 'AVAILABLE',
+        activeAssignedInstallationsCount: 0,
+      },
+      {
+        fullName: 'Ganesh Iyer',
+        email: 'tech.blr@accel.com',
+        phone: '9845054321',
+        password: 'Password@123',
+        role: 'technician',
+        badgeId: 'ENG-BLR-603',
+        specialization: 'Direct Cloud Connect & SD-WAN',
+        territoryCircle: 'Bengaluru Urban',
+        isAvailable: true,
+        availabilityStatus: 'AVAILABLE',
+        activeAssignedInstallationsCount: 0,
+      },
+    ];
+
+    for (const tech of demoTechnicians) {
+      let existingTech = await User.findOne({ email: tech.email });
+      if (!existingTech) {
+        await User.create(tech);
+        console.log(`[Seed] Created Field Technician: ${tech.fullName} (${tech.badgeId})`);
+      } else {
+        existingTech.role = 'technician';
+        existingTech.badgeId = tech.badgeId;
+        existingTech.specialization = tech.specialization;
+        existingTech.territoryCircle = tech.territoryCircle;
+        existingTech.isAvailable = tech.isAvailable;
+        existingTech.availabilityStatus = tech.availabilityStatus;
+        await existingTech.save();
+      }
+    }
+
     // Demo Admin (Priya Nair)
     let adminUser = await User.findOne({ email: 'admin@accel.com' });
     if (!adminUser) {

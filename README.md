@@ -148,6 +148,9 @@ The platform implements role-based access control (RBAC). You can sign in using 
 | **Channel Partner** | **Rohit Deshmukh** | `rohit.mumbai@accel.com` | `9820011223` | `Password@123` | **Mumbai Metro** *(Code: `CP-MUM-201`)* | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
 | **Channel Partner** | **Karthik Reddy** | `karthik.blr@accel.com` | `9845011224` | `Password@123` | **Bengaluru Urban** *(Code: `CP-BLR-301`)* | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
 | **Channel Partner** | **Sachin Patil** | `sachin.pune@accel.com` | `9850011225` | `Password@123` | **Pune Hub** *(Code: `CP-PUN-401`)* | [Partner Portal (`/partner`)](http://localhost:5173/partner) |
+| **Field Technician** | **Ramesh Kumar** | `tech.ramesh@accel.com` | `9811054321` | `Password@123` | **Delhi NCR** *(Badge: `ENG-DELHI-408`)* | [Field Tasks (`/technician`)](http://localhost:5173/technician) |
+| **Field Technician** | **Suresh Patil** | `tech.suresh@accel.com` | `9820054321` | `Password@123` | **Mumbai Metro** *(Badge: `ENG-MUM-502`)* | [Field Tasks (`/technician`)](http://localhost:5173/technician) |
+| **Field Technician** | **Ganesh Iyer** | `tech.blr@accel.com` | `9845054321` | `Password@123` | **Bengaluru Urban** *(Badge: `ENG-BLR-603`)* | [Field Tasks (`/technician`)](http://localhost:5173/technician) |
 | **Executive Admin** | **Priya Nair** | `admin@accel.com` | `9988776655` | `Password@123` | **Pan-India** *(All 22 Circles)* | [Executive Analytics (`/admin`)](http://localhost:5173/admin) |
 
 ---
