@@ -12,6 +12,8 @@ Fictional operator context: **Accel Telecom / Accel Business**
 ![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-E31E24?logo=mongodb&logoColor=white)
 ![Languages](https://img.shields.io/badge/Languages-10_Indian-E31E24)
 ![DPDP](https://img.shields.io/badge/DPDP_Act_2023-Consent--first-E31E24)
+![Production](https://img.shields.io/badge/Architecture-Production_Grade-E31E24)
+![Scaling](https://img.shields.io/badge/Design-Horizontally_Scalable-E31E24)
 
 [Live Demo](#-live-demo) · [Demo Video](#-live-demo) · [Quick Start](#-quick-start) · [Business Impact](#-business-impact) · [Docs](#-documentation)
 
@@ -31,18 +33,21 @@ Fictional operator context: **Accel Telecom / Accel Business**
 5. [Features by Role](#-features-by-role)
 6. [Language Support](#-10-language-support)
 7. [Architecture](#-architecture)
-8. [AI Advisor Design](#-ai-advisor-design)
-9. [Security & DPDP Compliance](#-security--dpdp-compliance)
-10. [Datasets](#-datasets-used)
-11. [Tech Stack](#-tech-stack)
-12. [Quick Start](#-quick-start)
-13. [Demo Accounts](#-demo-accounts)
-14. [Testing](#-testing)
-15. [Business Impact](#-business-impact)
-16. [Scope, Limitations & Roadmap](#-scope-limitations--roadmap)
-17. [Repository Structure](#-repository-structure)
-18. [Documentation](#-documentation)
-19. [Team](#-team)
+8. [Request Lifecycle & Sequence Diagrams](#-request-lifecycle--sequence-diagrams)
+9. [AI Advisor Design](#-ai-advisor-design)
+10. [Scaling Strategy](#-scaling-strategy)
+11. [Production Readiness](#-production-readiness)
+12. [Security & DPDP Compliance](#-security--dpdp-compliance)
+13. [Datasets](#-datasets-used)
+14. [Tech Stack](#-tech-stack)
+15. [Quick Start](#-quick-start)
+16. [Demo Accounts](#-demo-accounts)
+17. [Testing](#-testing)
+18. [Business Impact](#-business-impact)
+19. [Scope, Limitations & Roadmap](#-scope-limitations--roadmap)
+20. [Repository Structure](#-repository-structure)
+21. [Documentation](#-documentation)
+22. [Team](#-team)
 
 ---
 
@@ -60,6 +65,27 @@ India has **63M+ MSMEs** contributing over **30% of GDP**, yet enterprise teleco
 | Activation with GSTIN vs. without | **9.6% vs. 2.0%** |
 
 **Root causes from the data:** paperwork delays (**39.3%** of drop-offs) and quote delays (**30.4%**), plus a structural bias against businesses that don't have a GSTIN.
+
+### The problem, in plain English
+
+Imagine a bakery owner in Ludhiana who wants a business internet line. Today she has to:
+
+1. **Wait for a field sales rep to visit** — sometimes days, sometimes never.
+2. **Wait 3–5 more days for a paper quote** that may arrive while she has already gone to a competitor.
+3. **Photocopy, print and courier documents** for KYC, then make follow-up calls just to know where things stand.
+4. **Get quietly rejected or ignored if she has no GSTIN** — even though her business is real and credit-worthy (the Udyam certificate exists for exactly this, but nobody asked for it).
+
+Multiply that by 5,000 leads per quarter and you get a **7.36% conversion rate**, a **₹15,000 cost to acquire each customer**, and **17.6 days** of waiting before a business is actually online. Every day of delay is revenue lost — for the operator *and* for the small business that cannot trade online without a connection.
+
+### Problem → Solution mapping
+
+| Problem (from the data) | What we built | Expected effect |
+| :--- | :--- | :--- |
+| 39.3% of drop-offs are paperwork delays | Digital KYC with OCR + **Udyam Bridge** for non-GSTIN businesses | Paperwork gone; the 2.0% non-GSTIN conversion gap becomes addressable |
+| 30.4% of drop-offs are quote delays | Instant, **server-priced** quote builder with a 14-day lock | Quote in seconds, not 3–5 days |
+| 3+ status-chasing calls per customer | Live order tracker with milestone events | Customer self-serves; partner field time goes to exceptions only |
+| Language friction (customers speak 10+ languages) | Full 10-language localisation, including consent and KYC screens | Higher completion, wider reach |
+| Partners drowning in every lead | Exception-based partner queue (KYC failures, abandoned quotes) | Human effort where it actually converts |
 
 ---
 
@@ -221,6 +247,36 @@ flowchart TB
     PRC --> CSV
 ```
 
+### Layered view (clean architecture)
+
+```mermaid
+flowchart TB
+    subgraph Edge["Edge / Delivery"]
+        CDN[Static CDN<br/>SPA bundle]
+        LB[Load Balancer / TLS]
+    end
+    subgraph App["Application Layer (stateless)"]
+        API[REST API pods<br/>horizontally scalable]
+    end
+    subgraph Domain["Domain Services"]
+        S1[Pricing]
+        S2[KYC / Registry]
+        S3[Advisor AI]
+        S4[Order & Workflow]
+        S5[Analytics]
+    end
+    subgraph Data["Data Layer"]
+        MDB[(MongoDB<br/>replica set)]
+        OBJ[(Object storage<br/>KYC documents)]
+        CACHE[(Cache<br/>catalogue & registry)]
+    end
+    EXT[External:<br/>Gemini · GSTN/Udyam APIs · Payments · WhatsApp]
+
+    CDN --> LB --> API --> Domain
+    Domain --> Data
+    Domain -.-> EXT
+```
+
 **Key design decisions** (full detail in [`docs/TECHNICAL_DECISIONS.md`](docs/TECHNICAL_DECISIONS.md)):
 
 | Decision | Why |
@@ -229,6 +285,77 @@ flowchart TB
 | In-memory registry index | O(1) GSTIN/Udyam lookups keep KYC validation fast. |
 | Deterministic AI fallback | The demo never fails because of an API key, quota or network issue. |
 | RBAC at middleware level | Each role sees only its own routes and data. |
+| Stateless API design | Any pod can serve any request — this is what makes horizontal scaling trivial. |
+| Service-layer separation | Pricing, KYC, Advisor and Orders are isolated modules; each can be extracted into its own service without touching the others. |
+
+---
+
+## 🔁 Request Lifecycle & Sequence Diagrams
+
+### End-to-end onboarding sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor C as Customer
+    participant FE as React SPA
+    participant API as Express API
+    participant AI as Advisor Service
+    participant PR as Pricing Engine
+    participant KYC as KYC Service
+    participant R as Registry Index
+    participant DB as MongoDB
+
+    C->>FE: Answers 5 advisor questions (any language)
+    FE->>API: POST /api/advisor
+    API->>AI: Recommend bundle
+    AI-->>API: Bundle + justification (or rule fallback)
+    API-->>FE: Bundle (P01–P25 SKUs only)
+    FE->>API: POST /api/quote (cart, term)
+    API->>PR: Compute MRC, discounts, GST
+    PR-->>API: Authoritative price
+    API-->>FE: Quote locked (14 days)
+    C->>FE: DPDP consent + upload certificate
+    FE->>API: POST /api/kyc (multipart)
+    API->>KYC: Parse entities (simulated OCR)
+    KYC->>R: O(1) GSTIN / Udyam lookup
+    R-->>KYC: Verified entity
+    KYC-->>DB: Persist verification + audit trail
+    API-->>FE: KYC verified ✅
+    FE->>API: POST /api/orders (slot, site)
+    API-->>FE: Order created → tracker live
+```
+
+### Order state machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> QuoteCreated
+    QuoteCreated --> KYCVerified : consent + document verified
+    QuoteCreated --> AbandonedQuote : no checkout in window
+    AbandonedQuote --> KYCVerified : partner recovery (WhatsApp)
+    KYCVerified --> TechnicianAssigned : slot confirmed
+    KYCVerified --> KYCException : blurry scan / mismatch
+    KYCException --> TechnicianAssigned : partner assisted override
+    TechnicianAssigned --> InstallationInProgress
+    InstallationInProgress --> Activated : circuit live
+    Activated --> [*]
+```
+
+### Partner exception loop
+
+```mermaid
+flowchart LR
+    subgraph Auto["Self-service (no human)"]
+        A1[Advisor] --> A2[Quote] --> A3[KYC pass] --> A4[Checkout]
+    end
+    A2 -.->|abandoned| X{Exception Queue}
+    A3 -.->|OCR fails| X
+    X --> P[Partner verifies<br/>original documents]
+    P -->|assisted override + justification| A4
+    X -->|1-click WhatsApp| C[Customer resumes<br/>saved cart]
+    C --> A3
+```
 
 ---
 
@@ -252,6 +379,89 @@ Customer answers (5 Qs, any of 10 languages)
 - Recommendations are **constrained to the official catalogue** (`P01–P25`) and respect product dependencies, so the model cannot invent SKUs or prices.
 - Prices always come from the pricing engine, never from the LLM.
 - The rule-based fallback guarantees a valid recommendation even offline.
+- **Graceful degradation ladder:** Gemini → cached previous answer → deterministic rule matrix. The customer never sees an error screen because of AI.
+
+---
+
+## 📈 Scaling Strategy
+
+The system is designed to grow from a demo to national scale without an architecture rewrite.
+
+### Horizontal scaling (the primary lever)
+
+```mermaid
+flowchart LR
+    U[Users<br/>10K → 1M] --> CDN[CDN<br/>static SPA]
+    CDN --> LB[Load Balancer]
+    LB --> N1[API pod 1]
+    LB --> N2[API pod 2]
+    LB --> N3[API pod N<br/>auto-scaled on CPU/RPS]
+    N1 & N2 & N3 --> RS[(MongoDB<br/>replica set)]
+    N1 & N2 & N3 --> Q[(Job queue:<br/>OCR, notifications)]
+    Q --> W[Async workers]
+```
+
+Because the API is **stateless** (JWT sessions, no in-process state), you scale by adding pods behind a load balancer — no sticky sessions, no special routing.
+
+### Scale plan by stage
+
+| Stage | Traffic | What changes |
+| :--- | :--- | :--- |
+| **0 · Demo** (today) | 1 node, local MongoDB | Current setup; runs on a laptop |
+| **1 · Pilot** (~10K users) | 2–3 API pods + MongoDB replica set, registry index moved to a shared cache | Node cluster mode; object storage for KYC files |
+| **2 · Production** (~100K users) | Autoscaling group (target: p95 latency < 300 ms), read replicas, Redis cache for catalogue & registry | CDN for SPA; queue-based OCR and WhatsApp jobs; MongoDB Atlas with zone sharding by region |
+| **3 · National** (~1M+ users) | Data sharded by circle/region; services split along existing seams | Extract **KYC/OCR**, **Pricing** and **Advisor** into standalone services; multi-region active-active; event bus (Kafka) for order events |
+
+### What scales and why
+
+| Component | Bottleneck at scale | Scaling approach |
+| :--- | :--- | :--- |
+| **API (Express)** | CPU / request rate | Stateless pods + load balancer + autoscaling; Node cluster mode per instance |
+| **Registry lookups** | Memory per pod | In-memory index per pod is fine to ~1M records; beyond that, move to Redis with the same O(1) interface |
+| **MongoDB** | Write throughput, working set | Replica set first, then shard by `circle`/`region` key; read replicas for the analytics dashboard |
+| **OCR / document parsing** | CPU-heavy, bursty | Move to an async job queue with dedicated workers — never block an API request |
+| **AI Advisor** | External API quota & latency | Response caching per (segment × size × need) signature + deterministic fallback absorbs all overflow |
+| **Analytics queries** | Heavy reads on the same DB as writes | Dedicated read replica for `/admin` dashboards; pre-aggregated funnel metrics |
+| **KYC document uploads** | Disk & bandwidth | Object storage (S3-compatible) with signed URLs; antivirus scan in the upload pipeline |
+| **Static SPA** | Global latency | CDN everywhere; SPA bundle is fully cacheable and versioned |
+
+### Reliability & performance targets (production)
+
+| Target | Value | How |
+| :--- | :--- | :--- |
+| Availability | 99.9% | Stateless pods + replica set + health checks + rolling deploys |
+| p95 API latency | < 300 ms | Cache hot reads, O(1) registry index, connection pooling |
+| Quote computation | < 50 ms | Pure, in-process, catalogue cached in memory |
+| KYC validation | < 10 s end-to-end | Async OCR pipeline with queue depth monitoring |
+| Graceful degradation | AI/external outages don't block onboarding | Deterministic fallbacks at every external dependency |
+
+### Observability (production plan)
+
+- **Metrics:** request rate, error rate, latency percentiles, queue depth, AI fallback rate (a rising fallback rate is an early warning sign).
+- **Logs:** structured JSON logs with a request ID propagated through the whole lifecycle.
+- **Traces:** one trace spans Advisor → Quote → KYC → Order, so a slow onboarding can be pinpointed.
+- **Alerts:** error budget burn, KYC queue backlog, MongoDB replication lag, Gemini quota exhaustion.
+
+---
+
+## 🚢 Production Readiness
+
+What is already production-shaped, and what a real deployment would add.
+
+| Concern | Status today | For real production |
+| :--- | :--- | :--- |
+| Authentication | ✅ JWT + bcrypt, role claims | Add refresh-token rotation, MFA for staff roles |
+| Authorisation | ✅ RBAC middleware on every route | Add row-level ownership checks on all data reads |
+| Input validation | ✅ Zod schemas on API payloads | Contract tests against the OpenAPI spec |
+| Security headers / rate limits | ✅ Helmet + express-rate-limit | WAF at the edge; per-IP *and* per-account limits |
+| Secrets | `.env` files | Vault / cloud secret manager; no secrets in images |
+| Config | Environment-driven | 12-factor config; separate dev/staging/prod environments |
+| Data protection | Consent-first DPDP flow, minimal fields | Encryption at rest (already in Atlas), field-level encryption for KYC entities, retention policy |
+| File handling | Multer with type/size limits | Object storage + signed URLs + malware scanning |
+| Testing | ✅ 7-stage API suite | Add integration tests with a test DB, frontend E2E (Playwright), load tests |
+| CI/CD | Manual deploys | GitHub Actions: lint → test → build → image → deploy; preview envs per PR |
+| Deployment | Single node | Containers behind LB, rolling deploys with health-gated traffic shifting |
+| Backups & DR | — | Automated MongoDB snapshots (PITR), documented RTO/RPO, quarterly restore drills |
 
 ---
 
