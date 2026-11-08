@@ -1,6 +1,5 @@
 const Order = require('../models/Order');
 const User = require('../models/User');
-const BusinessProfile = require('../models/BusinessProfile');
 const { emitTechnicianTaskUpdated, emitOrderStatusUpdated, emitServiceActivated } = require('../socket');
 
 // @desc    Get all installation tasks assigned to the authenticated field technician

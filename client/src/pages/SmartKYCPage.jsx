@@ -28,7 +28,6 @@ import {
   Phone,
   MapPin,
   ScanLine,
-  CheckCheck,
   AlertCircle,
   Bot
 } from 'lucide-react';

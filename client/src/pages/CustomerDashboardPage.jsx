@@ -26,17 +26,14 @@ import {
   Sparkles,
   ShoppingBag,
   Server,
-  Radio,
   Check,
-  AlertCircle,
   Receipt,
   CreditCard,
   Search,
   Filter,
   ArrowUpDown,
   Eye,
-  Calendar,
-  ArrowRight
+  Calendar
 } from 'lucide-react';
 import RequestAssistanceModal from '../components/partner/RequestAssistanceModal';
 

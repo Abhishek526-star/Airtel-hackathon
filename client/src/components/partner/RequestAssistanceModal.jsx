@@ -11,8 +11,6 @@ import {
   Clock, 
   CheckCircle2, 
   AlertCircle, 
-  Briefcase,
-  ShieldCheck,
   Send
 } from 'lucide-react';
 

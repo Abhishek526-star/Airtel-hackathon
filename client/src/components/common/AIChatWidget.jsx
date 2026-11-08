@@ -2,20 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import {
-  MessageSquare,
   X,
   Send,
   Bot,
-  User,
-  Sparkles,
   Phone,
-  HardHat,
-  ChevronDown,
-  Minimize2,
-  Maximize2,
-  RefreshCw,
-  CheckCircle2,
-  AlertTriangle
+  HardHat
 } from 'lucide-react';
 
 const AIChatWidget = () => {

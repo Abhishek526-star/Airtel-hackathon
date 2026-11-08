@@ -14,7 +14,6 @@ import {
   Search, 
   Bot,
   Zap,
-  PhoneCall,
   Phone,
   Inbox,
   Clock,
@@ -22,8 +21,6 @@ import {
   RefreshCw,
   Check,
   Building2,
-  Calendar,
-  AlertCircle,
   FileText,
   Mail,
   Receipt,
@@ -34,12 +31,9 @@ import {
   ChevronRight,
   Sparkles,
   Lock,
-  FileCheck,
   Activity,
   Layers,
   Send,
-  ExternalLink,
-  Shield,
   Filter
 } from 'lucide-react';
 

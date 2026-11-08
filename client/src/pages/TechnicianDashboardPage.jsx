@@ -16,18 +16,13 @@ import {
   CheckCircle2,
   AlertCircle,
   Activity,
-  Wifi,
   Radio,
   Server,
   Zap,
   RefreshCw,
   Search,
   Filter,
-  Check,
   X,
-  ExternalLink,
-  ChevronRight,
-  ShieldCheck,
   Info
 } from 'lucide-react';
 

@@ -1,5 +1,4 @@
 const Product = require('../../models/Product');
-const env = require('../../config/env');
 const geminiClient = require('./geminiClient');
 
 class AdvisorService {

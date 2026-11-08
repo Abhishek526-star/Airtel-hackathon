@@ -14,7 +14,6 @@ import {
   Mail,
   CheckCircle2,
   Briefcase,
-  Users,
   Edit3,
   X,
   Radio,
@@ -23,10 +22,8 @@ import {
   Lock,
   ArrowRight,
   TrendingUp,
-  Sparkles,
   Power,
-  HardHat,
-  Wrench
+  HardHat
 } from 'lucide-react';
 
 const ProfilePage = () => {

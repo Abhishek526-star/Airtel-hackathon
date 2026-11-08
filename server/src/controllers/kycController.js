@@ -4,7 +4,7 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const AssistanceRequest = require('../models/AssistanceRequest');
 const kycService = require('../services/kyc/kycService');
-const { emitKycStatusUpdated, emitKycExceptionAssigned, emitPartnerAssistanceRequested, emitOrderStatusUpdated } = require('../socket');
+const { emitKycStatusUpdated, emitKycExceptionAssigned, emitPartnerAssistanceRequested } = require('../socket');
 
 // Helper: Dynamically match & assign a certified Smart KYC Partner
 const assignKycPartnerForCustomer = async (user, profile, kycDoc, issueNotes, docType, extractedId) => {
